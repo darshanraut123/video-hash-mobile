@@ -1,4 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+ <!-- Add camera permission -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- Add audio recording permission -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Permissions for storage access -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 
     <uses-permission android:name="android.permission.INTERNET" />
 

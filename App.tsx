@@ -1,98 +1,133 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState, useRef } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, PermissionsAndroid, Platform, Alert } from 'react-native';
+import { Camera, useCameraDevices, VideoFile, CameraDevice } from 'react-native-vision-camera';
+import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
-import React from 'react';
-import type {PropsWithChildren} from 'react';
-import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+const App: React.FC = () => {
+  const devices = useCameraDevices();
+  const [device, setDevice] = useState<CameraDevice | undefined>(undefined);
+  const cameraRef = useRef<Camera | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [hasPermissions, setHasPermissions] = useState(false);
+  const [video, setVideo] = useState<VideoFile | null>(null);
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+  useEffect(() => {
+    if (devices?.[0]) {
+      setDevice(devices[0]); // Set the first available camera device (whether front or back)
+    }
+  }, [devices]);
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+  useEffect(() => {
+    requestPermissions();
+  }, []);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
-
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const requestPermissions = async () => {
+    if (Platform.OS === 'android') {
+      const cameraPermission = await request(PERMISSIONS.ANDROID.CAMERA);
+      const audioPermission = await request(PERMISSIONS.ANDROID.RECORD_AUDIO);
+      
+      if (cameraPermission === RESULTS.GRANTED && audioPermission === RESULTS.GRANTED) {
+        setHasPermissions(true);
+      } else {
+        Alert.alert('Permissions required', 'Please grant camera and audio permissions.');
+      }
+    } else {
+      const cameraPermission = await request(PERMISSIONS.IOS.CAMERA);
+      const audioPermission = await request(PERMISSIONS.IOS.MICROPHONE);
+      
+      if (cameraPermission === RESULTS.GRANTED && audioPermission === RESULTS.GRANTED) {
+        setHasPermissions(true);
+      } else {
+        Alert.alert('Permissions required', 'Please grant camera and audio permissions.');
+      }
+    }
   };
 
+  const startRecording = async () => {
+    if (cameraRef.current && !isRecording) {
+      try {
+        setIsRecording(true);
+        await cameraRef.current.startRecording({
+          onRecordingFinished: (video) => {
+            setIsRecording(false);
+            setVideo(video);
+            saveVideo(video.path);
+          },
+          onRecordingError: (error) => {
+            setIsRecording(false);
+            console.error(error);
+          },
+        });
+      } catch (error) {
+        console.error(error);
+        setIsRecording(false);
+      }
+    }
+  };
+
+  const stopRecording = () => {
+    if (cameraRef.current && isRecording) {
+      cameraRef.current.stopRecording();
+    }
+  };
+
+  const saveVideo = (uri: string) => {
+    Alert.alert('Video saved', `Video saved to: ${uri}`);
+    // You can implement saving to gallery if required here
+  };
+
+  if (!device) return <Text>Loading Camera...</Text>;
+
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
-      />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Text>hello world</Text>
-      </ScrollView>
-    </SafeAreaView>
+    <View style={styles.container}>
+      {hasPermissions ? (
+        <>
+          <Camera
+            ref={cameraRef}
+            style={StyleSheet.absoluteFill}
+            device={device}
+            isActive={true}
+            video={true}
+          />
+          <View style={styles.buttonContainer}>
+            {isRecording ? (
+              <TouchableOpacity onPress={stopRecording} style={styles.button}>
+                <Text style={styles.text}>Stop Recording</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={startRecording} style={styles.button}>
+                <Text style={styles.text}>Start Recording</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </>
+      ) : (
+        <Text style={styles.text}>Requesting Permissions...</Text>
+      )}
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    backgroundColor: 'black',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  buttonContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginBottom: 50,
   },
-  sectionDescription: {
-    marginTop: 8,
+  button: {
+    padding: 15,
+    backgroundColor: 'red',
+    borderRadius: 10,
+  },
+  text: {
     fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+    color: 'white',
   },
 });
 
