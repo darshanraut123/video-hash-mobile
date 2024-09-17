@@ -1,7 +1,9 @@
-import VideoCamera from './src/components/video-camera';
+import React from 'react';
+import Demo from './Demo';
 
 const App: React.FC = () => {
-  return <VideoCamera />;
+  return <Demo />;
+  // return <VideoCamera />;
 };
 
 export default App;
