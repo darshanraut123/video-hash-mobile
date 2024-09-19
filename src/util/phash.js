@@ -19,10 +19,9 @@ class Hash {
 }
 
 const pHash = {
-  async hash(input) {
-    console.log('Inside hash utility');
+  hash(input) {
+    // console.log('Inside hash utility');
     const data = this._convertToObject(input);
-    // console.log('_convertToObject==> ' + JSON.stringify(data));
     const hashOp = this._calculateHash(data);
     console.log('Hash obtained inside utility ==> ' + hashOp.toBinary());
     return hashOp.toBinary();
@@ -91,7 +90,7 @@ const pHash = {
           .padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
 
         // Determine color name or closest match (e.g., "black", "white", "red")
-        const colorName = getColorNameFromRGB(red, green, blue); // Optional: You can skip this if not needed
+        const colorName = 'red'; // Optional: You can skip this if not needed
 
         // Append formatted pixel data to the string
         formattedData += `${x},${y}: (${red},${green},${blue})  ${hex}  ${colorName}\n`;

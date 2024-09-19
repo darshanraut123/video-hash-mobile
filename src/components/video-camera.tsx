@@ -1,13 +1,6 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import uuid from 'react-native-uuid';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  Button,
-} from 'react-native';
+import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import {crop} from 'vision-camera-cropper';
@@ -18,15 +11,11 @@ import {
   CameraDevice,
   useFrameProcessor,
 } from 'react-native-vision-camera';
-import {
-  // FFmpegKit,
-  FFmpegKitConfig,
-} from 'ffmpeg-kit-react-native';
-// import ImagePicker from 'react-native-image-crop-picker';
-import RNFS from 'react-native-fs';
+import {FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import {getLocalBeaconAPI, getNistBeaconAPI} from '../api-requests/requests';
 import {Worklets} from 'react-native-worklets-core';
 import pHash from '../util/phash';
+import Svg, {Path} from 'react-native-svg';
 
 export default function VideoCamera() {
   const devices: any = useCameraDevices();
@@ -36,7 +25,6 @@ export default function VideoCamera() {
   const [device, setDevice] = useState<CameraDevice>();
   const [hasPermissions, setHasPermissions] = useState(false);
   const [isCameraInitialized, handleCameraInitialized] = useState(false);
-  const [processing, setProcessing] = useState<boolean>(false);
   const qrCodeRef = useRef<any>();
   const canvasRef = useRef<any>();
   const nistBeacon = useRef<any>();
@@ -49,10 +37,10 @@ export default function VideoCamera() {
       setDevice(devices[0]);
       FFmpegKitConfig.init()
         .then(() => {
-          console.log('FFmpegKit initialized');
+          console.log('FFmpegKit Initialized');
         })
         .catch(error => {
-          console.error('Error initializing FFmpegKit:', error);
+          console.error('Error Initializing FFmpegKit:', error);
         });
     }
   }, [devices]);
@@ -74,16 +62,8 @@ export default function VideoCamera() {
     fetchBeacon();
 
     requestPermissions();
-    const fb = setInterval(() => {
-      fetchBeacon();
-    }, 3000);
-
-    const nist = setInterval(() => {
-      const captureFrameEx = async () => {
-        getNistBeacon();
-      };
-      captureFrameEx();
-    }, 10000);
+    const fb = setInterval(fetchBeacon, 3000);
+    const nist = setInterval(getNistBeacon, 10000);
 
     return () => {
       clearInterval(fb);
@@ -99,21 +79,14 @@ export default function VideoCamera() {
 
     const canvas: any = canvasRef.current;
     const ctx = await canvas.getContext('2d');
-    ctx.fillStyle = 'white';
-    ctx.fillRect(0, 0, 100, 100);
     canvas.width = 32;
     canvas.height = 32;
-    const img = new CanvasImage(canvas, 32, 32);
-
+    const img = new CanvasImage(canvas);
     const base64complete: string =
       'data:image/png;base64,' + frameData.base64.replace('\n', '').trim();
     img.src = base64complete;
-    // console.log('Base64==> ' + frameData.base64new);
-
-    img.addEventListener('load', async () => {
-      console.log('AddEventListener Load triggered');
-      console.log(canvas.height);
-      console.log(canvas.width);
+    img.addEventListener('load', onLoadImage);
+    async function onLoadImage() {
       ctx.drawImage(img, 0, 0, img.width, img.height);
       try {
         const imageData = await ctx.getImageData(
@@ -122,62 +95,56 @@ export default function VideoCamera() {
           canvas.width,
           canvas.height,
         );
-        console.log('Imagedata extracted');
+        // console.log('Imagedata extracted');
         const pixels = imageData.data;
         const width = imageData.width; // Assuming you have width and height of the canvas
         const height = imageData.height;
         let formattedData = `# ImageMagick pixel enumeration: ${width},${height},255,srgb\n`;
-
         for (let y = 0; y < height; y++) {
           for (let x = 0; x < width; x++) {
             // Calculate the pixel's starting index in the array
             const index = (y * width + x) * 4;
-
             // Extract RGBA values
             const red = pixels[index];
             const green = pixels[index + 1];
             const blue = pixels[index + 2];
             // const alpha = pixels[index + 3]; // We're not using alpha in this case
-
             // Convert RGB to hex format
             const hex = `#${red.toString(16).padStart(2, '0')}${green
               .toString(16)
               .padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
-
             // Determine color name or closest match (e.g., "black", "white", "red")
             const colorName = 'red';
-
             // Append formatted pixel data to the string
             formattedData += `${x},${y}: (${red},${green},${blue})  ${hex}  ${colorName}\n`;
           }
         }
+        // console.log('formattedData===> ' + formattedData);
+        const hash = pHash.hash(formattedData);
+        const eachSegmentData: {} = {
+          id: outputArray.current.length + 1,
+          frameTimestamp: frameData.frameTimestamp,
+          nistBeaconUniqueId: nistBeacon.current.pulse.outputValue,
+          nistBeaconTimeStamp: nistBeacon.current.pulse.timeStamp,
+          beaconVersion: nistBeacon.current.pulse.version,
+          unixTimestamp: Math.floor(Date.now() / 1000),
+          localBeaconUniqueId: localBeacon.current.uniqueValue,
+          localBeaconTimestamp: localBeacon.current.timestamp,
+          timeStamp: new Date(),
+          hash,
+          uniqueSegmentId: uuid.v4(),
+        };
 
-        console.log('formattedData===> ');
-        // const hash = pHash.hash(formattedData);
-
-        // let eachSegmentData: any = {};
-        // eachSegmentData.id = outputArray.current.length + 1;
-        // eachSegmentData.frame = frameData.base64;
-        // eachSegmentData.frameTimestamp = frameData.frameTimestamp;
-        // eachSegmentData.base64 = base64complete;
-        // // eachSegmentData.beaconUniqueId = nistBeacon.current.pulse.outputValue;
-        // // eachSegmentData.beaconTimeStamp = nistBeacon.current.pulse.timeStamp;
-        // // eachSegmentData.beaconVersion = nistBeacon.current.pulse.version;
-        // eachSegmentData.unixTimestamp = Math.floor(Date.now() / 1000);
-        // // eachSegmentData.localBeaconUniqueId = localBeacon.current.uniqueValue;
-        // // eachSegmentData.localBeaconTimestamp = localBeacon.current.timestamp;
-        // eachSegmentData.timeStamp = new Date();
-        // eachSegmentData.hash = hash;
-        // eachSegmentData.uniqueSegmentId = uuid.v4();
-        // console.log(eachSegmentData.id + ' ' + JSON.stringify(eachSegmentData));
-        // console.log(
-        //   '================================================================',
-        // );
-        // outputArray.current = [...outputArray.current, eachSegmentData];
+        console.log(eachSegmentData);
+        console.log(
+          '=======================================================================================================',
+        );
+        outputArray.current = [...outputArray.current, eachSegmentData];
+        // console.log('Length==> ' + outputArray.current.length);
       } catch (e: any) {
         console.error('Error with fetching image data:', e);
       }
-    });
+    }
   });
 
   // const generateAndSaveQRCode = async () => {
@@ -286,7 +253,7 @@ export default function VideoCamera() {
         setIsRecording(true);
         await cameraRef.current.startRecording({
           onRecordingFinished: (finishedVideo: VideoFile) => {
-            // console.log('Video==> ' + finishedVideo);
+            // console.log('Finished Video==> ' + finishedVideo);
             setIsRecording(false);
             // saveVideo(finishedVideo.path);
             // outputArray.current.forEach((element: any, index: number) => {
@@ -329,12 +296,12 @@ export default function VideoCamera() {
   //   }
   // };
 
-  const fetchBeacon = () => {
-    localBeacon.current = getLocalBeaconAPI();
+  const fetchBeacon = async () => {
+    localBeacon.current = await getLocalBeaconAPI();
   };
 
-  const getNistBeacon = () => {
-    nistBeacon.current = getNistBeaconAPI();
+  const getNistBeacon = async () => {
+    nistBeacon.current = await getNistBeaconAPI();
   };
 
   // Frame processor to process frames based on 5-second interval
@@ -356,7 +323,7 @@ export default function VideoCamera() {
         lastFrameTimestampRef.current = frameTimestamp; // Update last extracted time
         const result = crop(frame, {
           includeImageBase64: true,
-          saveAsFile: true,
+          saveAsFile: false,
         });
         generatePhash(result);
       }
@@ -400,14 +367,30 @@ export default function VideoCamera() {
           {isCameraInitialized && (
             <View style={styles.buttonContainer}>
               {isRecording ? (
-                <TouchableOpacity onPress={stopRecording} style={styles.button}>
-                  <Text style={styles.text}>Stop Recording</Text>
+                <TouchableOpacity
+                  onPress={stopRecording}
+                  style={styles.stop_recording_button}>
+                  <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
+                    <Path
+                      fill="#1C274C"
+                      fillRule="evenodd"
+                      d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM8.586 8.586C8 9.172 8 10.114 8 12c0 1.886 0 2.828.586 3.414C9.172 16 10.114 16 12 16c1.886 0 2.828 0 3.414-.586C16 14.828 16 13.886 16 12c0-1.886 0-2.828-.586-3.414C14.828 8 13.886 8 12 8c-1.886 0-2.828 0-3.414.586Z"
+                      clipRule="evenodd"
+                    />
+                  </Svg>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
                   onPress={startRecording}
-                  style={styles.button}>
-                  <Text style={styles.text}>Start Recording</Text>
+                  style={styles.start_recording_button}>
+                  <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
+                    <Path
+                      fill="#1C274C"
+                      fillRule="evenodd"
+                      d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1.306-6.154 4.72-2.787c.781-.462.781-1.656 0-2.118l-4.72-2.787C9.934 7.706 9 8.29 9 9.214v5.573c0 .923.934 1.507 1.694 1.059Z"
+                      clipRule="evenodd"
+                    />
+                  </Svg>
                 </TouchableOpacity>
               )}
             </View>
@@ -443,10 +426,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 50,
   },
-  button: {
+  start_recording_button: {
     padding: 15,
-    backgroundColor: 'red',
-    borderRadius: 10,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#77c78d',
+  },
+  stop_recording_button: {
+    padding: 15,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#CC0033',
   },
   text: {
     fontSize: 18,
