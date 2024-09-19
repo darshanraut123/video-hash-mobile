@@ -1,32 +1,44 @@
 import React, {useEffect, useState, useRef} from 'react';
 import uuid from 'react-native-uuid';
-import {StyleSheet, View, Text, TouchableOpacity, Alert} from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Button,
+} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import Canvas, {Image as CanvasImage} from 'react-native-canvas';
+import {crop} from 'vision-camera-cropper';
 import {
   Camera,
   useCameraDevices,
   VideoFile,
   CameraDevice,
-  // useFrameProcessor,
-  // useFrameProcessor,
+  useFrameProcessor,
 } from 'react-native-vision-camera';
-import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import {
   // FFmpegKit,
   FFmpegKitConfig,
 } from 'ffmpeg-kit-react-native';
 // import ImagePicker from 'react-native-image-crop-picker';
 import RNFS from 'react-native-fs';
+import {getLocalBeaconAPI, getNistBeaconAPI} from '../api-requests/requests';
+import {Worklets} from 'react-native-worklets-core';
+import pHash from '../util/phash';
 
 export default function VideoCamera() {
   const devices: any = useCameraDevices();
+  const lastFrameTimestampRef = useRef<number | null>(null);
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [device, setDevice] = useState<CameraDevice>();
   const [hasPermissions, setHasPermissions] = useState(false);
   const [isCameraInitialized, handleCameraInitialized] = useState(false);
-  // const [video, setVideo] = useState<VideoFile | null>(null);
+  const [processing, setProcessing] = useState<boolean>(false);
   const qrCodeRef = useRef<any>();
+  const canvasRef = useRef<any>();
   const nistBeacon = useRef<any>();
   const outputArray = useRef<any>([]);
   const [jsonObject, setJsonObject] = useState({});
@@ -58,7 +70,7 @@ export default function VideoCamera() {
     };
 
     //Prefetch once
-    getNistBeaconByCurrentTimestamp();
+    getNistBeacon();
     fetchBeacon();
 
     requestPermissions();
@@ -68,7 +80,7 @@ export default function VideoCamera() {
 
     const nist = setInterval(() => {
       const captureFrameEx = async () => {
-        await getNistBeaconByCurrentTimestamp();
+        getNistBeacon();
       };
       captureFrameEx();
     }, 10000);
@@ -79,31 +91,120 @@ export default function VideoCamera() {
     };
   }, []);
 
-  const generateAndSaveQRCode = async () => {
-    if (qrCodeRef.current) {
-      for (let index = 0; index < outputArray.current.length; index++) {
-        const awaited = () => {
-          return new Promise<void>((resolve): void => {
-            const each = outputArray.current[index];
-            setJsonObject(each);
-            console.log('Processing qrcode for id: ' + each.id);
-            qrCodeRef.current.toDataURL(async (data: string) => {
-              try {
-                const filePath = `${RNFS.PicturesDirectoryPath}/qrcode_${each.id}.png`;
-                await RNFS.writeFile(filePath, data, 'base64');
-                console.log('QR Code Saved', `Image saved at ${filePath}`);
-                resolve();
-              } catch (err) {
-                console.error('Error saving QR code image:', err);
-                resolve();
-              }
-            });
-          });
-        };
-        await awaited();
-      }
+  const generatePhash = Worklets.createRunOnJS(async (frameData: any) => {
+    if (!canvasRef.current) {
+      console.log('In if-condition');
+      return;
     }
-  };
+
+    const canvas: any = canvasRef.current;
+    const ctx = await canvas.getContext('2d');
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, 100, 100);
+    canvas.width = 32;
+    canvas.height = 32;
+    const img = new CanvasImage(canvas, 32, 32);
+
+    const base64complete: string =
+      'data:image/png;base64,' + frameData.base64.replace('\n', '').trim();
+    img.src = base64complete;
+    // console.log('Base64==> ' + frameData.base64new);
+
+    img.addEventListener('load', async () => {
+      console.log('AddEventListener Load triggered');
+      console.log(canvas.height);
+      console.log(canvas.width);
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+      try {
+        const imageData = await ctx.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height,
+        );
+        console.log('Imagedata extracted');
+        const pixels = imageData.data;
+        const width = imageData.width; // Assuming you have width and height of the canvas
+        const height = imageData.height;
+        let formattedData = `# ImageMagick pixel enumeration: ${width},${height},255,srgb\n`;
+
+        for (let y = 0; y < height; y++) {
+          for (let x = 0; x < width; x++) {
+            // Calculate the pixel's starting index in the array
+            const index = (y * width + x) * 4;
+
+            // Extract RGBA values
+            const red = pixels[index];
+            const green = pixels[index + 1];
+            const blue = pixels[index + 2];
+            // const alpha = pixels[index + 3]; // We're not using alpha in this case
+
+            // Convert RGB to hex format
+            const hex = `#${red.toString(16).padStart(2, '0')}${green
+              .toString(16)
+              .padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
+
+            // Determine color name or closest match (e.g., "black", "white", "red")
+            const colorName = 'red';
+
+            // Append formatted pixel data to the string
+            formattedData += `${x},${y}: (${red},${green},${blue})  ${hex}  ${colorName}\n`;
+          }
+        }
+
+        console.log('formattedData===> ');
+        // const hash = pHash.hash(formattedData);
+
+        // let eachSegmentData: any = {};
+        // eachSegmentData.id = outputArray.current.length + 1;
+        // eachSegmentData.frame = frameData.base64;
+        // eachSegmentData.frameTimestamp = frameData.frameTimestamp;
+        // eachSegmentData.base64 = base64complete;
+        // // eachSegmentData.beaconUniqueId = nistBeacon.current.pulse.outputValue;
+        // // eachSegmentData.beaconTimeStamp = nistBeacon.current.pulse.timeStamp;
+        // // eachSegmentData.beaconVersion = nistBeacon.current.pulse.version;
+        // eachSegmentData.unixTimestamp = Math.floor(Date.now() / 1000);
+        // // eachSegmentData.localBeaconUniqueId = localBeacon.current.uniqueValue;
+        // // eachSegmentData.localBeaconTimestamp = localBeacon.current.timestamp;
+        // eachSegmentData.timeStamp = new Date();
+        // eachSegmentData.hash = hash;
+        // eachSegmentData.uniqueSegmentId = uuid.v4();
+        // console.log(eachSegmentData.id + ' ' + JSON.stringify(eachSegmentData));
+        // console.log(
+        //   '================================================================',
+        // );
+        // outputArray.current = [...outputArray.current, eachSegmentData];
+      } catch (e: any) {
+        console.error('Error with fetching image data:', e);
+      }
+    });
+  });
+
+  // const generateAndSaveQRCode = async () => {
+  //   if (qrCodeRef.current) {
+  //     for (let index = 0; index < outputArray.current.length; index++) {
+  //       const awaited = () => {
+  //         return new Promise<void>((resolve): void => {
+  //           const each = outputArray.current[index];
+  //           setJsonObject(each);
+  //           console.log('Processing qrcode for id: ' + each.id);
+  //           qrCodeRef.current.toDataURL(async (data: string) => {
+  //             try {
+  //               const filePath = `${RNFS.PicturesDirectoryPath}/qrcode_${each.id}.png`;
+  //               await RNFS.writeFile(filePath, data, 'base64');
+  //               console.log('QR Code Saved', `Image saved at ${filePath}`);
+  //               resolve();
+  //             } catch (err) {
+  //               console.error('Error saving QR code image:', err);
+  //               resolve();
+  //             }
+  //           });
+  //         });
+  //       };
+  //       await awaited();
+  //     }
+  //   }
+  // };
 
   // const pickVdoFun = async () => {
   //   const pickVdo = await ImagePicker.openPicker({
@@ -178,57 +279,25 @@ export default function VideoCamera() {
   //   // Add your frame capturing or processing logic here
   // };
 
-  // const frameProcessor = useFrameProcessor(frame => {
-  //   'worklet';
-  //   if (frame.pixelFormat === 'rgb') {
-  //     const buffer = frame.toArrayBuffer();
-  //     const data = new Uint8Array(buffer);
-  //     console.log(`Pixel at 0,0: RGB(${data[0]}, ${data[1]}, ${data[2]})`);
-  //   }
-  // }, []);
-
-  const createFinalArrayOneByOne = () => {
-    let eachSegmentData: any = {};
-    eachSegmentData.id = outputArray.current.length + 1;
-    eachSegmentData.beaconUniqueId = nistBeacon.current.pulse.outputValue;
-    eachSegmentData.beaconTimeStamp = nistBeacon.current.pulse.timeStamp;
-    eachSegmentData.beaconVersion = nistBeacon.current.pulse.version;
-    eachSegmentData.unixTimestamp = Math.floor(Date.now() / 1000);
-    eachSegmentData.localBeaconUniqueId = localBeacon.current.uniqueValue;
-    eachSegmentData.localBeaconTimestamp = localBeacon.current.timestamp;
-    eachSegmentData.timeStamp = new Date();
-    eachSegmentData.hash = 'demo-temp-hash-from-video';
-    eachSegmentData.uniqueSegmentId = uuid.v4();
-    console.log(eachSegmentData.id + ' ' + JSON.stringify(eachSegmentData));
-    console.log(
-      '================================================================',
-    );
-    outputArray.current = [...outputArray.current, eachSegmentData];
-  };
-
   const startRecording = async () => {
     if (cameraRef.current && !isRecording) {
       try {
+        lastFrameTimestampRef.current = null;
         setIsRecording(true);
-        const startedTimer = setInterval(() => {
-          createFinalArrayOneByOne();
-        }, 5000);
         await cameraRef.current.startRecording({
           onRecordingFinished: (finishedVideo: VideoFile) => {
-            console.log('Video==> ' + finishedVideo);
+            // console.log('Video==> ' + finishedVideo);
             setIsRecording(false);
-            // setVideo(finishedVideo);
-            saveVideo(finishedVideo.path);
-            clearInterval(startedTimer);
-            outputArray.current.forEach((element: any, index: number) => {
-              console.log(
-                'Index+1 ' +
-                  index +
-                  ' Each O/P ---> ' +
-                  JSON.stringify(element),
-              );
-            });
-            generateAndSaveQRCode();
+            // saveVideo(finishedVideo.path);
+            // outputArray.current.forEach((element: any, index: number) => {
+            //   console.log(
+            //     'Index+1 ' +
+            //       index +
+            //       ' Each O/P ---> ' +
+            //       JSON.stringify(element),
+            //   );
+            // });
+            // generateAndSaveQRCode();
           },
           onRecordingError: error => {
             setIsRecording(false);
@@ -248,46 +317,52 @@ export default function VideoCamera() {
     }
   };
 
-  // Function to save the video to the Camera Roll
-  const saveVideo = async (videoPath: string) => {
-    try {
-      const savedUri = await CameraRoll.save(videoPath, {type: 'video'});
-      Alert.alert('Video Saved', 'Video has been saved to your gallery!');
-      console.log('Video saved to camera roll:', savedUri);
-    } catch (error) {
-      console.log('Error saving video:', error);
-      Alert.alert('Error', 'Failed to save video');
-    }
-  };
+  // // Function to save the video to the Camera Roll
+  // const saveVideo = async (videoPath: string) => {
+  //   try {
+  //     const savedUri = await CameraRoll.save(videoPath, {type: 'video'});
+  //     Alert.alert('Video Saved', 'Video has been saved to your gallery!');
+  //     console.log('Video saved to camera roll:', savedUri);
+  //   } catch (error) {
+  //     console.log('Error saving video:', error);
+  //     Alert.alert('Error', 'Failed to save video');
+  //   }
+  // };
 
   const fetchBeacon = () => {
-    fetch('https://rrdemo.buzzybrains.net/api/beacon')
-      .then(response => response.json())
-      .then(data => {
-        localBeacon.current = data;
-      })
-      .catch(error => console.error('Error fetching beacon:', error));
+    localBeacon.current = getLocalBeaconAPI();
   };
 
-  const getNistBeaconByCurrentTimestamp = async () => {
-    try {
-      const unixTimestamp = Math.floor(Date.now() / 1000);
-      const beaconUrl = `https://beacon.nist.gov/beacon/2.0/pulse/time/${unixTimestamp}`;
-      const response = await fetch(beaconUrl);
+  const getNistBeacon = () => {
+    nistBeacon.current = getNistBeaconAPI();
+  };
 
-      if (!response.ok) {
-        throw new Error(`Error fetching data: ${response.statusText}`);
+  // Frame processor to process frames based on 5-second interval
+  const frameProcessor = useFrameProcessor(
+    frame => {
+      'worklet'; // Declare worklet function
+
+      const frameTimestamp = frame.timestamp; // Timestamp of the current frame in nanoseconds
+
+      if (!lastFrameTimestampRef.current) {
+        lastFrameTimestampRef.current = frameTimestamp; // Store the first frame's timestamp
       }
-      nistBeacon.current = await response.json();
-    } catch (error) {
-      console.error('Error fetching data from NIST Beacon:', error);
-    }
-  };
 
-  // const frameProcessor = useFrameProcessor(frame => {
-  //   'worklet';
-  //   console.log(`Frame: ${frame.width}x${frame.height} (${frame.pixelFormat})`);
-  // }, []);
+      // Calculate the time difference in seconds
+      const timeDiffInSeconds =
+        (frameTimestamp - lastFrameTimestampRef.current) / 1e9; // Convert from nanoseconds to seconds
+      if (timeDiffInSeconds >= 5 && isRecording) {
+        // If 5 seconds have passed since the last frame was extracted
+        lastFrameTimestampRef.current = frameTimestamp; // Update last extracted time
+        const result = crop(frame, {
+          includeImageBase64: true,
+          saveAsFile: true,
+        });
+        generatePhash(result);
+      }
+    },
+    [isRecording],
+  );
 
   if (!device) {
     return <Text>Loading Camera...</Text>;
@@ -297,24 +372,31 @@ export default function VideoCamera() {
     <View style={styles.container}>
       {hasPermissions ? (
         <>
-          {/* QR Code Component */}
-          <View style={styles.qrcodeContainer}>
-            <QRCode
-              value={JSON.stringify(jsonObject)}
-              size={200}
-              getRef={ref => (qrCodeRef.current = ref)}
-            />
-          </View>
           <Camera
             ref={cameraRef}
             style={StyleSheet.absoluteFill}
-            // frameProcessor={frameProcessor} // Use the frame processor
+            frameProcessor={frameProcessor} // Use the frame processor
             device={device}
             isActive={true}
             video={true}
             audio={true}
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
+          <Canvas
+            style={{backgroundColor: 'white', height: 32, width: 32}}
+            ref={canvasRef}
+          />
+          {/* <Button title="Click" onPress={generatePhash} /> */}
+          {isRecording && (
+            <View style={styles.qrcodeContainer}>
+              <QRCode
+                backgroundColor="white"
+                value={JSON.stringify(jsonObject)}
+                size={50}
+                getRef={ref => (qrCodeRef.current = ref)}
+              />
+            </View>
+          )}
           {isCameraInitialized && (
             <View style={styles.buttonContainer}>
               {isRecording ? (
@@ -333,6 +415,17 @@ export default function VideoCamera() {
         </>
       ) : (
         <Text style={styles.text}>Requesting Permissions...</Text>
+
+        //   <TouchableOpacity
+        //     onPress={() => {
+        //       processImagesFromQueue(IMAGE_URLS);
+        //     }}
+        //     style={styles.button}>
+        //     <Text style={styles.text}>Start Recording</Text>
+        //   </TouchableOpacity>
+        //   {pixelDataArray.map((a: any) => (
+        //     <Text style={{color: 'white'}}>{JSON.stringify(a)}</Text>
+        //   ))}
       )}
     </View>
   );
@@ -362,7 +455,7 @@ const styles = StyleSheet.create({
   qrcodeContainer: {
     flex: 1,
     padding: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
   },
 });

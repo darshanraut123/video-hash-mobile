@@ -20,11 +20,11 @@ class Hash {
 
 const pHash = {
   async hash(input) {
-    console.log('Inside hash');
+    console.log('Inside hash utility');
     const data = this._convertToObject(input);
-    console.log('_convertToObject==> ' + JSON.stringify(data));
+    // console.log('_convertToObject==> ' + JSON.stringify(data));
     const hashOp = this._calculateHash(data);
-    console.log('Hash obtained ==> ' + hashOp.toBinary());
+    console.log('Hash obtained inside utility ==> ' + hashOp.toBinary());
     return hashOp.toBinary();
   },
 
@@ -55,9 +55,9 @@ const pHash = {
     const lines = string.split('\n');
 
     lines.shift();
-    lines.forEach(element => {
-      console.log(element);
-    });
+    // lines.forEach(element => {
+    //   console.log(element);
+    // });
     const data = {};
     for (const line of lines) {
       const parts = line.split(' ').filter(v => v);
@@ -69,6 +69,56 @@ const pHash = {
     }
 
     return data;
+  },
+
+  _generateMagickString({height, width, pixels}) {
+    let formattedData = `# ImageMagick pixel enumeration: ${width},${height},255,srgb\n`;
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        // Calculate the pixel's starting index in the array
+        const index = (y * width + x) * 4;
+
+        // Extract RGBA values
+        const red = pixels[index];
+        const green = pixels[index + 1];
+        const blue = pixels[index + 2];
+        // const alpha = pixels[index + 3]; // We're not using alpha in this case
+
+        // Convert RGB to hex format
+        const hex = `#${red.toString(16).padStart(2, '0')}${green
+          .toString(16)
+          .padStart(2, '0')}${blue.toString(16).padStart(2, '0')}`;
+
+        // Determine color name or closest match (e.g., "black", "white", "red")
+        const colorName = getColorNameFromRGB(red, green, blue); // Optional: You can skip this if not needed
+
+        // Append formatted pixel data to the string
+        formattedData += `${x},${y}: (${red},${green},${blue})  ${hex}  ${colorName}\n`;
+        return formattedData;
+      }
+    }
+  },
+
+  _getColorNameFromRGB(r, g, b) {
+    if (r === 0 && g === 0 && b === 0) return 'black';
+    if (r === 255 && g === 255 && b === 255) return 'white';
+    if (r === 255 && g === 0 && b === 0) return 'red';
+    if (r === 0 && g === 255 && b === 0) return 'lime';
+    if (r === 0 && g === 0 && b === 255) return 'blue';
+    if (r === 255 && g === 255 && b === 0) return 'yellow';
+    if (r === 0 && g === 255 && b === 255) return 'cyan';
+    if (r === 255 && g === 0 && b === 255) return 'magenta';
+    if (r === 128 && g === 128 && b === 128) return 'grey';
+    if (r === 128 && g === 0 && b === 0) return 'maroon';
+    if (r === 128 && g === 128 && b === 0) return 'olive';
+    if (r === 0 && g === 128 && b === 0) return 'green';
+    if (r === 128 && g === 0 && b === 128) return 'purple';
+    if (r === 0 && g === 128 && b === 128) return 'teal';
+    if (r === 0 && g === 0 && b === 128) return 'navy';
+
+    // For colors not in this list, return the RGB triplet as a fallback
+    return `rgb(${r},${g},${b})`;
   },
 
   _calculateHash(data) {

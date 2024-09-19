@@ -40,12 +40,14 @@ const App = () => {
 
     const canvas: any = canvasRef.current;
     const ctx = canvas.getContext('2d');
+    canvas.width = 32;
+    canvas.height = 32;
     const img = new CanvasImage(canvas, 32, 32);
     img.src = 'data:image/png;base64,' + base64;
+
     img.addEventListener('load', async () => {
       console.log('AddEventListener Load triggered');
-      canvas.width = img.width;
-      canvas.height = img.height;
+
       console.log(canvas.height);
       console.log(canvas.width);
       ctx.drawImage(img, 0, 0, img.width, img.height);
