@@ -1,6 +1,6 @@
-import React, {useEffect, useState, useRef, useCallback} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import uuid from 'react-native-uuid';
-import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
+import {StyleSheet, View, Text, TouchableOpacity, Button} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import {crop} from 'vision-camera-cropper';
@@ -11,25 +11,33 @@ import {
   CameraDevice,
   useFrameProcessor,
 } from 'react-native-vision-camera';
-import {FFmpegKitConfig} from 'ffmpeg-kit-react-native';
+import {FFmpegKit, FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import {getLocalBeaconAPI, getNistBeaconAPI} from '../api-requests/requests';
 import {Worklets} from 'react-native-worklets-core';
 import pHash from '../util/phash';
 import Svg, {Path} from 'react-native-svg';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
+import QrCodeComponent from './qr-code';
+import RNFS from 'react-native-fs';
+import Loader from './loader';
 
 export default function VideoCamera() {
   const devices: any = useCameraDevices();
   const lastFrameTimestampRef = useRef<number | null>(null);
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isLoaderActive, setIsLoaderActive] = useState(false);
   const [device, setDevice] = useState<CameraDevice>();
   const [hasPermissions, setHasPermissions] = useState(false);
   const [isCameraInitialized, handleCameraInitialized] = useState(false);
   const qrCodeRef = useRef<any>();
   const canvasRef = useRef<any>();
   const nistBeacon = useRef<any>();
-  const outputArray = useRef<any>([]);
+  const [qrCodeData, setQrcodeData] = useState<any>([]);
+  const qrCodeRefs = useRef<any>([]);
+  const extractedFramesDataArray = useRef<any>([]);
   const [jsonObject, setJsonObject] = useState({});
+  let tempIndex = 0;
 
   let localBeacon = useRef<any>(null);
   useEffect(() => {
@@ -87,6 +95,11 @@ export default function VideoCamera() {
     img.src = base64complete;
     img.addEventListener('load', onLoadImage);
     async function onLoadImage() {
+      if (tempIndex % 2 !== 0) {
+        tempIndex++;
+        return;
+      }
+      tempIndex++;
       ctx.drawImage(img, 0, 0, img.width, img.height);
       try {
         const imageData = await ctx.getImageData(
@@ -119,11 +132,9 @@ export default function VideoCamera() {
             formattedData += `${x},${y}: (${red},${green},${blue})  ${hex}  ${colorName}\n`;
           }
         }
-        // console.log('formattedData===> ' + formattedData);
         const hash = pHash.hash(formattedData);
         const eachSegmentData: {} = {
-          id: outputArray.current.length + 1,
-          frameTimestamp: frameData.frameTimestamp,
+          id: extractedFramesDataArray.current.length + 1,
           nistBeaconUniqueId: nistBeacon.current.pulse.outputValue,
           nistBeaconTimeStamp: nistBeacon.current.pulse.timeStamp,
           beaconVersion: nistBeacon.current.pulse.version,
@@ -139,141 +150,134 @@ export default function VideoCamera() {
         console.log(
           '=======================================================================================================',
         );
-        outputArray.current = [...outputArray.current, eachSegmentData];
-        // console.log('Length==> ' + outputArray.current.length);
+        extractedFramesDataArray.current = [
+          ...extractedFramesDataArray.current,
+          eachSegmentData,
+        ];
+        setJsonObject(eachSegmentData);
+        setQrcodeData((prev: any) => [...prev, eachSegmentData]);
       } catch (e: any) {
         console.error('Error with fetching image data:', e);
       }
     }
   });
 
-  // const generateAndSaveQRCode = async () => {
-  //   if (qrCodeRef.current) {
-  //     for (let index = 0; index < outputArray.current.length; index++) {
-  //       const awaited = () => {
-  //         return new Promise<void>((resolve): void => {
-  //           const each = outputArray.current[index];
-  //           setJsonObject(each);
-  //           console.log('Processing qrcode for id: ' + each.id);
-  //           qrCodeRef.current.toDataURL(async (data: string) => {
-  //             try {
-  //               const filePath = `${RNFS.PicturesDirectoryPath}/qrcode_${each.id}.png`;
-  //               await RNFS.writeFile(filePath, data, 'base64');
-  //               console.log('QR Code Saved', `Image saved at ${filePath}`);
-  //               resolve();
-  //             } catch (err) {
-  //               console.error('Error saving QR code image:', err);
-  //               resolve();
-  //             }
-  //           });
-  //         });
-  //       };
-  //       await awaited();
-  //     }
-  //   }
-  // };
+  const convertVideo = async (inputPath: string) => {
+    try {
+      // inputPath =
+      //   '/data/user/0/com.awesomeproject/cache/mrousavy8939969087001153279.mov';
+      const outputPath = `${
+        RNFS.PicturesDirectoryPath
+      }/video_${Date.now()}.mp4`;
+      // const watermarkPaths = [
+      //   '/data/user/0/com.awesomeproject/cache/qrcode_0.png',
+      //   '/data/user/0/com.awesomeproject/cache/qrcode_1.png',
+      //   '/data/user/0/com.awesomeproject/cache/qrcode_2.png',
+      // ];
 
-  // const pickVdoFun = async () => {
-  //   const pickVdo = await ImagePicker.openPicker({
-  //     mediaType: 'video',
-  //     // Other options like cropping can be added here
-  //   });
-  //   convertVideo(pickVdo.path);
-  // };
+      const watermarkPaths = extractedFramesDataArray.current.map(
+        (e: any) => e.qrcodePath,
+      );
 
-  // const convertVideo = async (videoInputPath: any) => {
-  //   try {
-  //     const inputPath = videoInputPath;
-  //     const outputPath = RNFS.PicturesDirectoryPath + '/output.mp4';
-  //     const watermarkPaths = [
-  //       'temp_0_watermark.png',
-  //       'temp_1_watermark.png',
-  //       'temp_2_watermark.png',
-  //       'temp_3_watermark.png',
-  //       'temp_4_watermark.png',
-  //       'temp_5_watermark.png',
-  //       'temp_6_watermark.png',
-  //       'temp_7_watermark.png',
-  //       'temp_8_watermark.png',
-  //       'temp_9_watermark.png',
-  //       'temp_10_watermark.png',
-  //       'temp_11_watermark.png',
-  //       'temp_12_watermark.png',
-  //     ];
+      const overlayDuration = 5; // duration for each watermark in seconds
 
-  //     const overlayDuration = 5; // duration for each watermark in seconds
+      // Construct the filter_complex argument
+      const filterComplex = watermarkPaths
+        .map((path: string, index: number) => {
+          const startTime = index * overlayDuration;
+          const endTime = startTime + overlayDuration;
+          const prevOverlay = index === 0 ? '[0:v]' : `[v${index}]`;
+          return `${prevOverlay}[${
+            index + 1
+          }:v] overlay=W-w-10:H-h-10:enable='between(t,${startTime},${endTime})'[v${
+            index + 1
+          }]`;
+        })
+        .join(';');
 
-  //     // Construct the filter_complex argument
-  //     const filterComplex = watermarkPaths
-  //       .map((path, index) => {
-  //         const startTime = index * overlayDuration;
-  //         const endTime = startTime + overlayDuration;
-  //         const prevOverlay = index === 0 ? '[0:v]' : `[v${index}]`;
-  //         return `${prevOverlay}[${
-  //           index + 1
-  //         }:v] overlay=W-w-10:H-h-10:enable='between(t,${startTime},${endTime})'[v${
-  //           index + 1
-  //         }]`;
-  //       })
-  //       .join(';');
+      // FFmpeg command to convert the video
+      const command: string = `-i ${inputPath} ${watermarkPaths
+        .map((path: string) => `-i ${path}`)
+        .join(' ')} -filter_complex "${filterComplex}" -map [v${
+        watermarkPaths.length
+      }] -c:v mpeg4 -q:v 20 -c:a copy ${outputPath}`; // Run FFmpeg command
 
-  //     // Complete filter_complex with the last output mapping
-  //     const completeFilterComplex = `${filterComplex} -map [v${watermarkPaths.length}]`;
+      const session = await FFmpegKit.execute(command);
+      // `-i /data/user/0/com.awesomeproject/cache/mrousavy8939969087001153279.mov -i /data/user/0/com.awesomeproject/cache/qrcode_0.png -i /data/user/0/com.awesomeproject/cache/qrcode_1.png -i /data/user/0/com.awesomeproject/cache/qrcode_2.png -filter_complex "[0:v][1:v] overlay=W-w-10:H-h-10:enable='between(t,0,5)'[v1];[v1][2:v] overlay=W-w-10:H-h-10:enable='between(t,5,10)'[v2];[v2][3:v] overlay=W-w-10:H-h-10:enable='between(t,10,15)'[v3]" -map [v3] -c:a copy /storage/emulated/0/Pictures/video_1727097387107.mp4`,
 
-  //     // FFmpeg command to convert the video
-  //     const command: string = `-i ${inputPath} ${watermarkPaths
-  //       .map(path => `-i ${path}`)
-  //       .join(
-  //         ' ',
-  //       )} -filter_complex "${completeFilterComplex}" -c:v libx264 -crf 30 -preset ultrafast -c:a copy ${outputPath}`; // Run FFmpeg command
+      // Unique session id created for this execution
+      const sessionId = session.getSessionId();
+      console.log(`sessionId===> ${sessionId}`);
 
-  //     const session = await FFmpegKit.execute(command);
-  //     // Unique session id created for this execution
-  //     const sessionId = session.getSessionId();
-  //     console.log(`sessionId===> ${sessionId}`);
+      // Command arguments as a single string
+      const comd = session.getCommand();
+      console.log(`command===> ${comd}`);
+    } catch (error) {
+      console.error('FFmpeg command failed', error);
+    } finally {
+      setIsLoaderActive(false);
+    }
+  };
 
-  //     // Command arguments as a single string
-  //     const comd = session.getCommand();
-  //     console.log(`command===> ${comd}`);
-  //   } catch (error) {
-  //     console.error('FFmpeg command failed', error);
-  //   }
-  // };
+  const saveQRCode = async () => {
+    return new Promise(async (resolve, reject) => {
+      if (qrCodeRefs.current) {
+        const savePromises = qrCodeRefs.current.map(
+          (eachRef: any, index: number) => {
+            return new Promise((resolveInner: any) => {
+              eachRef.toDataURL(async (data: string) => {
+                try {
+                  const filePath = `${RNFS.CachesDirectoryPath}/qrcode_${index}.png`;
+                  const fileExists = await RNFS.exists(filePath);
+                  if (fileExists) {
+                    await RNFS.unlink(filePath);
+                  }
+                  await RNFS.writeFile(filePath, data, 'base64');
+                  extractedFramesDataArray.current[index].qrcodePath = filePath;
+                  resolveInner(filePath); // Resolve the promise with file path
+                } catch (err) {
+                  console.error('Error saving QR code image:', err);
+                  resolveInner(undefined); // Resolve with undefined in case of error
+                }
+              });
+            });
+          },
+        );
 
-  // // Function to capture the frame (implement your processing logic here)
-  // const captureFrame = () => {
-  //   console.log('Frame captured at:', new Date().toLocaleTimeString());
-  //   // Add your frame capturing or processing logic here
-  // };
+        const filePaths = await Promise.all(savePromises); // Wait for all QR codes to be saved
+        resolve(filePaths); // Resolve with array of file paths
+      } else {
+        reject('Error: qrCodeRefs not found');
+      }
+    });
+  };
 
   const startRecording = async () => {
     if (cameraRef.current && !isRecording) {
       try {
+        tempIndex = 0;
+        extractedFramesDataArray.current = [];
+        setQrcodeData([]);
         lastFrameTimestampRef.current = null;
         setIsRecording(true);
         await cameraRef.current.startRecording({
-          onRecordingFinished: (finishedVideo: VideoFile) => {
-            // console.log('Finished Video==> ' + finishedVideo);
+          onRecordingFinished: async (finishedVideo: VideoFile) => {
+            setIsLoaderActive(true);
             setIsRecording(false);
-            // saveVideo(finishedVideo.path);
-            // outputArray.current.forEach((element: any, index: number) => {
-            //   console.log(
-            //     'Index+1 ' +
-            //       index +
-            //       ' Each O/P ---> ' +
-            //       JSON.stringify(element),
-            //   );
-            // });
-            // generateAndSaveQRCode();
+            const paths = await saveQRCode();
+            console.log('Paths==> ' + paths);
+            convertVideo(finishedVideo.path);
           },
           onRecordingError: error => {
             setIsRecording(false);
             console.error(error);
+            setIsLoaderActive(false);
           },
         });
       } catch (error) {
         console.error(error);
         setIsRecording(false);
+        setIsLoaderActive(false);
       }
     }
   };
@@ -283,19 +287,6 @@ export default function VideoCamera() {
       cameraRef.current.stopRecording();
     }
   };
-
-  // // Function to save the video to the Camera Roll
-  // const saveVideo = async (videoPath: string) => {
-  //   try {
-  //     const savedUri = await CameraRoll.save(videoPath, {type: 'video'});
-  //     Alert.alert('Video Saved', 'Video has been saved to your gallery!');
-  //     console.log('Video saved to camera roll:', savedUri);
-  //   } catch (error) {
-  //     console.log('Error saving video:', error);
-  //     Alert.alert('Error', 'Failed to save video');
-  //   }
-  // };
-
   const fetchBeacon = async () => {
     localBeacon.current = await getLocalBeaconAPI();
   };
@@ -321,11 +312,11 @@ export default function VideoCamera() {
       if (timeDiffInSeconds >= 5 && isRecording) {
         // If 5 seconds have passed since the last frame was extracted
         lastFrameTimestampRef.current = frameTimestamp; // Update last extracted time
-        const result = crop(frame, {
+        const imgData = crop(frame, {
           includeImageBase64: true,
           saveAsFile: false,
         });
-        generatePhash(result);
+        generatePhash(imgData);
       }
     },
     [isRecording],
@@ -339,6 +330,7 @@ export default function VideoCamera() {
     <View style={styles.container}>
       {hasPermissions ? (
         <>
+          {isLoaderActive && <Loader />}
           <Camera
             ref={cameraRef}
             style={StyleSheet.absoluteFill}
@@ -349,17 +341,23 @@ export default function VideoCamera() {
             audio={true}
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
+
           <Canvas
             style={{backgroundColor: 'white', height: 32, width: 32}}
             ref={canvasRef}
           />
-          {/* <Button title="Click" onPress={generatePhash} /> */}
+          <QrCodeComponent
+            qrCodeData={qrCodeData}
+            extractedFramesDataArray={extractedFramesDataArray}
+            qrCodeRefs={qrCodeRefs}
+          />
+
           {isRecording && (
             <View style={styles.qrcodeContainer}>
               <QRCode
                 backgroundColor="white"
                 value={JSON.stringify(jsonObject)}
-                size={50}
+                size={80}
                 getRef={ref => (qrCodeRef.current = ref)}
               />
             </View>
