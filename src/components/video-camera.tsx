@@ -328,6 +328,15 @@ export default function VideoCamera() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.absQrcodeContainer}>
+        <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
+      </View>
+
+      <Canvas
+        style={{backgroundColor: 'white', height: 32, width: 32}}
+        ref={canvasRef}
+      />
+
       {hasPermissions ? (
         <>
           {isLoaderActive && <Loader />}
@@ -340,16 +349,6 @@ export default function VideoCamera() {
             video={true}
             audio={true}
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
-          />
-
-          <Canvas
-            style={{backgroundColor: 'white', height: 32, width: 32}}
-            ref={canvasRef}
-          />
-          <QrCodeComponent
-            qrCodeData={qrCodeData}
-            extractedFramesDataArray={extractedFramesDataArray}
-            qrCodeRefs={qrCodeRefs}
           />
 
           {isRecording && (
@@ -396,17 +395,6 @@ export default function VideoCamera() {
         </>
       ) : (
         <Text style={styles.text}>Requesting Permissions...</Text>
-
-        //   <TouchableOpacity
-        //     onPress={() => {
-        //       processImagesFromQueue(IMAGE_URLS);
-        //     }}
-        //     style={styles.button}>
-        //     <Text style={styles.text}>Start Recording</Text>
-        //   </TouchableOpacity>
-        //   {pixelDataArray.map((a: any) => (
-        //     <Text style={{color: 'white'}}>{JSON.stringify(a)}</Text>
-        //   ))}
       )}
     </View>
   );
@@ -447,5 +435,9 @@ const styles = StyleSheet.create({
     padding: 10,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
+  },
+  absQrcodeContainer: {
+    position: 'absolute',
+    zIndex: -1,
   },
 });

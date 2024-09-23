@@ -18,7 +18,7 @@ const QrCodeComponent = (props: any) => {
 
   return (
     <>
-      {props.qrCodeData.map((element: string, index: number) => (
+      {props.qrCodeData.map((element: any, index: number) => (
         <View key={index} style={styles.qrcodeContainer}>
           <QRCode
             backgroundColor="white"
