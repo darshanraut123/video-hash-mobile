@@ -16,7 +16,6 @@ import {getLocalBeaconAPI, getNistBeaconAPI} from '../api-requests/requests';
 import {Worklets} from 'react-native-worklets-core';
 import pHash from '../util/phash';
 import Svg, {Path} from 'react-native-svg';
-import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 import QrCodeComponent from './qr-code';
 import RNFS from 'react-native-fs';
 import Loader from './loader';

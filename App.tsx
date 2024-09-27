@@ -1,5 +1,5 @@
 import React from 'react';
-import VideoCamera from './src/components/video-camera';
+import VideoCamera from './steg';
 
 const App: React.FC = () => {
   return <VideoCamera />;
