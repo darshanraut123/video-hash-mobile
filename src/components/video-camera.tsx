@@ -356,11 +356,21 @@ export default function VideoCamera() {
           const startTime = index * overlayDuration;
           const endTime = startTime + overlayDuration;
           const prevOverlay = index === 0 ? '[0:v]' : `[v${index}]`;
-          return `${prevOverlay}[${
-            index + 1
-          }:v] overlay=W-w-10:H-h-10:enable='between(t,${startTime},${endTime})'[v${
-            index + 1
-          }]`;
+          if (index < watermarkPaths.length - 1) {
+            // For all watermarks except the last, set their visibility duration
+            return `${prevOverlay}[${
+              index + 1
+            }:v] overlay=W-w-10:10:enable='between(t,${startTime},${endTime})'[v${
+              index + 1
+            }]`;
+          } else {
+            // For the last watermark, keep it visible until the end of the video
+            return `${prevOverlay}[${
+              index + 1
+            }:v] overlay=W-w-10:10:enable='between(t,${startTime},9999)'[v${
+              index + 1
+            }]`;
+          }
         })
         .join(';');
 
