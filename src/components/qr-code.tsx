@@ -5,7 +5,10 @@ import QRCode from 'react-native-qrcode-svg';
 const QrCodeComponent = (props: any) => {
   // Ensure the qrCodeRefs array grows when new data is added
   React.useEffect(() => {
-    if (props.qrCodeData.length > props.qrCodeRefs.current.length) {
+    if (props.qrCodeData.length === 0) {
+      // Reset refs to initial stage
+      props.qrCodeRefs.current = [];
+    } else if (props.qrCodeData.length > props.qrCodeRefs.current.length) {
       // Append null refs for new items
       props.qrCodeRefs.current = [
         ...props.qrCodeRefs.current,
