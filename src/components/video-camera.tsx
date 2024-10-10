@@ -6,11 +6,10 @@ import {
   Text,
   TouchableOpacity,
   Button,
-  Alert,
 } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Canvas, {Image as CanvasImage, ImageData} from 'react-native-canvas';
-import {crop} from 'vision-camera-cropper';
+// import {crop} from 'vision-camera-cropper';
 import {
   Camera,
   useCameraDevices,
@@ -31,6 +30,7 @@ import QrCodeComponent from './qr-code';
 import RNFS from 'react-native-fs';
 import Loader from './loader';
 import DeviceInfo from 'react-native-device-info';
+import Geolocation from 'react-native-geolocation-service';
 
 export default function VideoCamera() {
   const devices: any = useCameraDevices();
@@ -41,6 +41,7 @@ export default function VideoCamera() {
   const [device, setDevice] = useState<CameraDevice>();
   const [hasPermissions, setHasPermissions] = useState(false);
   const [isCameraInitialized, handleCameraInitialized] = useState(false);
+  const [location, setLocation] = useState<any>(null);
   const qrCodeRef = useRef<any>();
   const canvasRef = useRef<any>();
   const canvasStegRef = useRef<any>(null);
@@ -83,6 +84,22 @@ export default function VideoCamera() {
     requestPermissions();
     const fbTimer = setInterval(fetchBeacon, 3000);
     const nistTimer = setInterval(getNistBeacon, 10000);
+
+    // Request permission to access location
+    Geolocation.requestAuthorization('whenInUse');
+
+    // Get GPS data
+    Geolocation.getCurrentPosition(
+      position => {
+        const {latitude, longitude, altitude} = position.coords;
+        setLocation({latitude, longitude, altitude});
+      },
+      error => {
+        console.error(error);
+      },
+      {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
+    );
+
     return () => {
       clearInterval(fbTimer);
       clearInterval(nistTimer);
@@ -530,6 +547,8 @@ export default function VideoCamera() {
 
   const saveToAPI = async ({pHashes}: any) => {
     const deviceId = await DeviceInfo.getUniqueId();
+    const carrierName = await DeviceInfo.getCarrier();
+    const ipAddress = await DeviceInfo.getIpAddress();
     const segments = pHashes.map((eachhash: any, index: number) => {
       return {
         segmentIndex: index,
@@ -546,21 +565,17 @@ export default function VideoCamera() {
       VideoID: videoId.current,
       FullVideoHash: uuid.v4(),
       CellTower: {
-        Timestamp: '2023-01-02T12:34:56Z',
-        location: {
-          latitude: 37.7749,
-          longitude: -122.4194,
-        },
+        timestamp: new Date().toISOString(),
         network: {
-          cellTowerId: '123456789',
-          networkType: 'LTE',
+          carrierName,
+          ipAddress,
         },
       },
       GPS: {
-        latitude: 37.4219983,
-        longitude: -122.084,
-        altitude: 10.0,
-        timestamp: '2023-01-02T12:34:56.789Z',
+        latitude: location.latitude || 0,
+        longitude: location.longitude || 0,
+        altitude: location.altitude || 0,
+        timestamp: new Date().toISOString(),
       },
       NISTRandom: {
         nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
