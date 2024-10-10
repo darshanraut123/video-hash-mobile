@@ -48,5 +48,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location for GPS data</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to your location for GPS data</string>
 </dict>
 </plist>
