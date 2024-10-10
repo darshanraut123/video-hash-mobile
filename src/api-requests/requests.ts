@@ -1,6 +1,6 @@
 import axios from 'axios';
 const LOCAL_BEACON_URL = 'https://rrdemo.buzzybrains.net/api/beacon';
-const SAVE_HASH_URL = 'https://rrdemo.buzzybrains.net/api/saveHash';
+const SAVE_FIND_HASH_URL = 'https://rrdemo.buzzybrains.net/api/saveHash';
 const NIST_BEACON_URL = 'https://beacon.nist.gov/beacon/2.0/pulse/time';
 
 export const getLocalBeaconAPI = async () => {
@@ -27,7 +27,16 @@ export const getNistBeaconAPI = async () => {
 
 export const saveVideoHash = async (body: any) => {
   try {
-    let response = await axios.post(SAVE_HASH_URL, body);
+    let response = await axios.post(SAVE_FIND_HASH_URL, body);
+    return response.data;
+  } catch (error) {
+    console.warn('Error saving:', error);
+  }
+};
+
+export const findVideoHash = async (videoId: string) => {
+  try {
+    let response = await axios.get(SAVE_FIND_HASH_URL + '?videoId=' + videoId);
     return response.data;
   } catch (error) {
     console.warn('Error saving:', error);
