@@ -23,7 +23,7 @@ import {
   getNistBeaconAPI,
   saveVideoHash,
 } from '../api-requests/requests';
-import {Worklets} from 'react-native-worklets-core';
+import {Worklets, useSharedValue} from 'react-native-worklets-core';
 import pHash from '../util/phash';
 import Svg, {Path} from 'react-native-svg';
 import QrCodeComponent from './qr-code';
@@ -34,7 +34,7 @@ import Geolocation from 'react-native-geolocation-service';
 
 export default function VideoCamera() {
   const devices: any = useCameraDevices();
-  const lastFrameTimestampRef = useRef<number | null>(null);
+  // const lastFrameTimestampRef = useRef<number | null>(null);
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isLoaderActive, setIsLoaderActive] = useState<any>(null);
@@ -46,10 +46,17 @@ export default function VideoCamera() {
   const canvasRef = useRef<any>();
   const canvasStegRef = useRef<any>(null);
   const nistBeacon = useRef<any>();
-  const [qrCodeData, setQrcodeData] = useState<any>([]);
+  const [qrCodeData, setQrCodeData] = useState<any>([]);
+  const qrCodeDataRef = useRef<any>([]);
   const qrCodeRefs = useRef<any>([]);
   const [jsonObject, setJsonObject] = useState({});
   const videoId = useRef<any>();
+  const isRecordingShared = useSharedValue(isRecording);
+  const lastFrameTimestamp = useSharedValue(0);
+
+  useEffect(() => {
+    isRecordingShared.value = isRecording;
+  }, [isRecording]);
 
   let localBeacon = useRef<any>(null);
   useEffect(() => {
@@ -107,16 +114,23 @@ export default function VideoCamera() {
   }, []);
 
   const setQrCodes = Worklets.createRunOnJS(() => {
-    const eachQrcode = {
-      videoId: videoId.current,
-      segmentId: uuid.v4(),
-      nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-      nistBeaconTimeStamp: nistBeacon.current?.pulse.timeStamp,
-      localBeaconUniqueId: localBeacon.current?.uniqueValue,
-      localBeaconTimestamp: localBeacon.current?.timestamp,
-    };
-    setJsonObject(eachQrcode);
-    setQrcodeData((prev: any) => [...prev, eachQrcode]);
+    try {
+      const eachQrcode = {
+        videoId: videoId.current,
+        segmentId: uuid.v4(),
+        nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
+        nistBeaconTimeStamp: nistBeacon.current?.pulse.timeStamp,
+        localBeaconUniqueId: localBeacon.current?.uniqueValue,
+        localBeaconTimestamp: localBeacon.current?.timestamp,
+      };
+      setJsonObject(eachQrcode);
+      setQrCodeData((prev: any) => {
+        return [...prev, eachQrcode];
+      });
+      qrCodeDataRef.current = [...qrCodeDataRef.current, eachQrcode];
+    } catch (error) {
+      console.log('setQrCodes error==>', error);
+    }
   });
 
   const encodeMessagesInImages = async () => {
@@ -126,85 +140,88 @@ export default function VideoCamera() {
     const ctx = await canvas.getContext('2d');
 
     // Create an array of promises for each encoding task
-    const encodingTasks = qrCodeData.map((message: any, index: number) => {
-      return new Promise<void>(async (resolve, reject) => {
-        try {
-          const img = new CanvasImage(canvas);
-          const imagePath = imagePaths[index];
-          const base64complete = await RNFS.readFile(imagePath, 'base64');
-          img.src = `data:image/png;base64,${base64complete}`;
+    const encodingTasks = qrCodeDataRef.current.map(
+      (message: any, index: number) => {
+        return new Promise<void>(async (resolve, reject) => {
+          try {
+            const img = new CanvasImage(canvas);
+            const imagePath = imagePaths[index];
+            const base64complete = await RNFS.readFile(imagePath, 'base64');
+            img.src = `data:image/png;base64,${base64complete}`;
 
-          img.addEventListener('load', async () => {
-            try {
-              // Set canvas dimensions to match the image
-              canvas.width = img.width;
-              canvas.height = img.height;
+            img.addEventListener('load', async () => {
+              try {
+                // Set canvas dimensions to match the image
+                canvas.width = img.width;
+                canvas.height = img.height;
 
-              // Draw the image onto the canvas
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                // Draw the image onto the canvas
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-              // Extract the image data
-              const imageData = await ctx.getImageData(
-                0,
-                0,
-                canvas.width,
-                canvas.height,
-              );
+                // Extract the image data
+                const imageData = await ctx.getImageData(
+                  0,
+                  0,
+                  canvas.width,
+                  canvas.height,
+                );
 
-              // Convert the message to binary
-              const binaryData = textToBinary(message);
+                // Convert the message to binary
+                const binaryData = textToBinary(message);
 
-              // Encode the binary data into the image
-              const flatImageData = encodeMessageInImage2(
-                imageData.data,
-                binaryData,
-                canvas.width,
-                canvas.height,
-              );
-              const newImgData = convertFlatArrayToObjectFormat(flatImageData);
+                // Encode the binary data into the image
+                const flatImageData = encodeMessageInImage2(
+                  imageData.data,
+                  binaryData,
+                  canvas.width,
+                  canvas.height,
+                );
+                const newImgData =
+                  convertFlatArrayToObjectFormat(flatImageData);
 
-              // Update the image data array
-              const newData: any = Object.values(newImgData);
-              const length = Object.keys(newImgData).length;
+                // Update the image data array
+                const newData: any = Object.values(newImgData);
+                const length = Object.keys(newImgData).length;
 
-              for (let j = 0; j < length; j += 4) {
-                newData[j] = 0;
-                newData[j + 1] = 0;
-                newData[j + 2] = 0;
-                newData[j + 1] =
-                  newData[j + 2] =
-                  newData[j + 3] =
-                    imageData.data[j / 4];
+                for (let j = 0; j < length; j += 4) {
+                  newData[j] = 0;
+                  newData[j + 1] = 0;
+                  newData[j + 2] = 0;
+                  newData[j + 1] =
+                    newData[j + 2] =
+                    newData[j + 3] =
+                      imageData.data[j / 4];
+                }
+
+                // Create a new ImageData object and put it on the canvas
+                const imgData = new ImageData(
+                  canvas,
+                  newData,
+                  canvas.width,
+                  canvas.height,
+                );
+                ctx.putImageData(imgData, 0, 0);
+
+                // Convert the updated canvas back to base64
+                const newBase64Image = canvas.toDataURL().split(',')[1];
+
+                // Overwrite the original image with the new encoded image
+                await RNFS.writeFile(imagePath, newBase64Image, 'base64');
+                console.log(`Image saved with hidden message at: ${imagePath}`);
+
+                // Resolve the promise after the image is processed
+                resolve();
+              } catch (e: any) {
+                console.error('Error with encoding image:', e);
+                reject(e);
               }
-
-              // Create a new ImageData object and put it on the canvas
-              const imgData = new ImageData(
-                canvas,
-                newData,
-                canvas.width,
-                canvas.height,
-              );
-              ctx.putImageData(imgData, 0, 0);
-
-              // Convert the updated canvas back to base64
-              const newBase64Image = canvas.toDataURL().split(',')[1];
-
-              // Overwrite the original image with the new encoded image
-              await RNFS.writeFile(imagePath, newBase64Image, 'base64');
-              console.log(`Image saved with hidden message at: ${imagePath}`);
-
-              // Resolve the promise after the image is processed
-              resolve();
-            } catch (e: any) {
-              console.error('Error with encoding image:', e);
-              reject(e);
-            }
-          });
-        } catch (e: any) {
-          reject(e);
-        }
-      });
-    });
+            });
+          } catch (e: any) {
+            reject(e);
+          }
+        });
+      },
+    );
 
     // Wait for all encoding tasks to complete
     await Promise.all(encodingTasks);
@@ -488,11 +505,14 @@ export default function VideoCamera() {
           localBeaconTimestamp: localBeacon.current.timestamp,
         };
         setJsonObject(eachQrcode);
-        lastFrameTimestampRef.current = null;
+        // lastFrameTimestampRef.current = null;
+        lastFrameTimestamp.value = 0;
+        isRecordingShared.value = true;
         setIsRecording(true);
         await cameraRef.current.startRecording({
           onRecordingFinished: async (finishedVideo: VideoFile) => {
             setIsLoaderActive('Generating QR codes...');
+            isRecordingShared.value = false;
             setIsRecording(false);
             console.log(finishedVideo);
             const qrCodePaths: any = await saveQRCode();
@@ -527,11 +547,11 @@ export default function VideoCamera() {
               segmentFramePaths,
             );
             setIsLoaderActive('Saving to records...');
-            console.log('qrCodeData length ' + qrCodeData.length);
             saveToAPI({pHashes});
             setIsLoaderActive(null);
           },
           onRecordingError: error => {
+            isRecordingShared.value = false;
             setIsRecording(false);
             console.error(error);
             setIsLoaderActive(false);
@@ -549,18 +569,14 @@ export default function VideoCamera() {
     const deviceId = await DeviceInfo.getUniqueId();
     const carrierName = await DeviceInfo.getCarrier();
     const ipAddress = await DeviceInfo.getIpAddress();
-    const segments = pHashes.map((eachhash: any, index: number) => {
-      return {
-        segmentIndex: index,
-        videoId: videoId.current,
-        segmentId: uuid.v4(),
-        nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-        nistBeaconTimeStamp: nistBeacon.current?.pulse.timeStamp,
-        localBeaconUniqueId: localBeacon.current?.uniqueValue,
-        localBeaconTimestamp: localBeacon.current?.timestamp,
-        videoHash: eachhash,
-      };
-    });
+    const segments = qrCodeDataRef.current.map(
+      (qrCodeDataItem: any, index: number) => {
+        return {
+          ...qrCodeDataItem,
+          videoHash: pHashes[index],
+        };
+      },
+    );
     const apiBody = {
       VideoID: videoId.current,
       FullVideoHash: uuid.v4(),
@@ -585,9 +601,13 @@ export default function VideoCamera() {
       },
       segments,
     };
-    const res = await saveVideoHash(apiBody);
+    const res = await saveVideoHash(apiBody)
+      .then(resp => resp)
+      .finally(() => {
+        qrCodeDataRef.current = [];
+        setQrCodeData([]);
+      });
     console.log(res);
-    setQrcodeData([]);
   };
 
   const myFun = async () => {
@@ -660,27 +680,47 @@ export default function VideoCamera() {
   };
 
   // Frame processor to process frames based on 5-second interval
-  const frameProcessor = useFrameProcessor(
-    frame => {
-      'worklet'; // Declare worklet function
+  // const frameProcessor = useFrameProcessor(
+  //   frame => {
+  //     'worklet'; // Declare worklet function
 
-      const frameTimestamp = frame.timestamp; // Timestamp of the current frame in nanoseconds
+  //     const frameTimestamp = frame.timestamp; // Timestamp of the current frame in nanoseconds
 
-      if (!lastFrameTimestampRef.current) {
-        lastFrameTimestampRef.current = frameTimestamp; // Store the first frame's timestamp
-      }
+  //     console.log('isRecording==>' + isRecording);
 
-      // Calculate the time difference in seconds
-      const timeDiffInSeconds =
-        (frameTimestamp - lastFrameTimestampRef.current) / 1e9; // Convert from nanoseconds to seconds
-      if (timeDiffInSeconds >= 5 && isRecording) {
-        // If 5 seconds have passed since the last frame was extracted
-        lastFrameTimestampRef.current = frameTimestamp; // Update last extracted time
-        setQrCodes();
-      }
-    },
-    [isRecording],
-  );
+  //     if (!lastFrameTimestampRef.current) {
+  //       lastFrameTimestampRef.current = frameTimestamp; // Store the first frame's timestamp
+  //     }
+
+  //     // Calculate the time difference in seconds
+  //     const timeDiffInSeconds =
+  //       (frameTimestamp - lastFrameTimestampRef.current) / 1e9; // Convert from nanoseconds to seconds
+  //     if (timeDiffInSeconds >= 5 && isRecording) {
+  //       // If 5 seconds have passed since the last frame was extracted
+  //       lastFrameTimestampRef.current = frameTimestamp; // Update last extracted time
+  //       setQrCodes();
+  //     }
+  //   },
+  //   [],
+  // );
+
+  const frameProcessor = useFrameProcessor(frame => {
+    'worklet';
+
+    const frameTimestamp = frame.timestamp;
+    const recordingStatus = isRecordingShared.value;
+
+    if (lastFrameTimestamp.value === 0) {
+      lastFrameTimestamp.value = frameTimestamp;
+    }
+
+    const timeDiffInSeconds = (frameTimestamp - lastFrameTimestamp.value) / 1e9;
+
+    if (timeDiffInSeconds >= 5 && recordingStatus) {
+      lastFrameTimestamp.value = frameTimestamp;
+      setQrCodes(); // Call the JavaScript function
+    }
+  }, []);
 
   if (!device) {
     return <Text>Loading Camera...</Text>;
