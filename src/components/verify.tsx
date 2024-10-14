@@ -8,7 +8,7 @@ import {findVideoHash} from '../api-requests/requests';
 import Loader from './loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../util/phash';
-import { Paths } from '../navigation/path';
+import {Paths} from '../navigation/path';
 
 export default function Verify({navigation}: any) {
   const [videoFound, setVideoFound] = React.useState<any>(null);
@@ -50,7 +50,10 @@ export default function Verify({navigation}: any) {
         }
       }
       setIsLoaderActive('Fetching records for matching videos');
-
+      if (!videoId) {
+        Alert.alert('No Records found');
+        return;
+      }
       const response = await findVideoHash(videoId);
       if (response.document) {
         setVideoFound(response.document);
@@ -281,13 +284,21 @@ export default function Verify({navigation}: any) {
   };
 
   async function convert() {
-    const res: any = await launchImageLibrary({mediaType: 'video'});
-    const uri: any = res.assets[0].uri;
-    console.log(uri);
-    let command = `-y -i ${uri} -vf "hue=h=60:s=1" -c:a copy ${
-      RNFS.PicturesDirectoryPath
-    }/${Date.now()}tinted.mp4`;
-    await FFmpegKit.execute(command);
+    // const res: any = await launchImageLibrary({mediaType: 'video'});
+    // const uri: any = res.assets[0].uri;
+    // console.log(uri);
+    // // let command = `-y -i ${uri} -vf "hue=h=60:s=1" -c:a copy ${
+    // //   RNFS.PicturesDirectoryPath
+    // // }/${Date.now()}tinted.mp4`;
+    // // let command = `-y -i ${uri} -b:v 1M -c:a copy ${
+    // //   RNFS.PicturesDirectoryPath
+    // // }/${Date.now()}compressed.mp4`;
+
+    // let command = `-y -i ${uri} -vf "scale=720:1280" ${
+    //   RNFS.PicturesDirectoryPath
+    // }/${Date.now()}_720x1280.mp4`;
+
+    // await FFmpegKit.execute(command);
   }
 
   return (
@@ -299,8 +310,18 @@ export default function Verify({navigation}: any) {
           onPress={verifyVideo}
         />
         <Button title="convert variant" onPress={convert} />
-        <Button title="Sign In Page" onPress={() => navigation.navigate(Paths.Auth, { screen: Paths.SignIn })} />
-        <Button title="Sign Up Page" onPress={() => navigation.navigate(Paths.Auth, { screen: Paths.SignUp })} />
+        <Button
+          title="Sign In Page"
+          onPress={() =>
+            navigation.navigate(Paths.Auth, {screen: Paths.SignIn})
+          }
+        />
+        <Button
+          title="Sign Up Page"
+          onPress={() =>
+            navigation.navigate(Paths.Auth, {screen: Paths.SignUp})
+          }
+        />
         <ScrollView>
           <Canvas
             style={{backgroundColor: 'white', height: 32, width: 32}}
