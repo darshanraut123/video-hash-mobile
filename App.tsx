@@ -1,24 +1,24 @@
 
 
 import React from 'react';
-// import VideoCamera from './src/components/video-camera';
-// import {NavigationContainer} from '@react-navigation/native';
-// import {createStackNavigator} from '@react-navigation/stack';
-// import SignInScreen from './src/screens/authentication/login/SignInScreen';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import AppNavigator from './src/navigation/RootNavigator';
-import Header from './src/components/Header';
-
-
-// const Stack = createStackNavigator();
+import VideoCamera from './src/components/video-camera';
+import {NavigationContainer} from '@react-navigation/native';
+import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import Verify from './src/components/verify';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {Text} from 'react-native';
 
 const App: React.FC = () => {
-  // return <VideoCamera />;
+  const Stack = createNativeStackNavigator();
   return (
-    <GestureHandlerRootView>
-      <Header />
-      <AppNavigator />
-    </GestureHandlerRootView>
+    <SafeAreaView style={{flex: 1}}>
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="Record" component={VideoCamera} />
+          <Stack.Screen name="Verify" component={Verify} />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </SafeAreaView>
   );
 };
 

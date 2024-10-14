@@ -1923,6 +1923,14 @@
   resolved "https://registry.npmjs.org/@react-navigation/elements/-/elements-1.3.31.tgz"
   integrity sha512-bUzP4Awlljx5RKEExw8WYtif8EuQni2glDaieYROKTnaxsu9kEIA515sXQgUDZU4Ob12VoL7+z70uO3qrlfXcQ==
 
+"@react-navigation/native-stack@^6.11.0":
+  version "6.11.0"
+  resolved "https://registry.npmjs.org/@react-navigation/native-stack/-/native-stack-6.11.0.tgz"
+  integrity sha512-U5EcUB9Q2NQspCFwYGGNJm0h6wBCOv7T30QjndmvlawLkNt7S7KWbpWyxS9XBHSIKF57RgWjfxuJNTgTstpXxw==
+  dependencies:
+    "@react-navigation/elements" "^1.3.31"
+    warn-once "^0.1.0"
+
 "@react-navigation/native@^6.0.0", "@react-navigation/native@^6.1.18":
   version "6.1.18"
   resolved "https://registry.npmjs.org/@react-navigation/native/-/native-6.1.18.tgz"
@@ -1939,25 +1947,6 @@
   integrity sha512-lTM8gSFHSfkJvQkxacGM6VJtBt61ip2XO54aNfswD+KMw6eeZ4oehl7m0me3CR9hnDE4+60iAZR8sAhvCiI3NA==
   dependencies:
     nanoid "^3.1.23"
-
-"@react-navigation/stack@^6.4.1":
-  version "6.4.1"
-  resolved "https://registry.npmjs.org/@react-navigation/stack/-/stack-6.4.1.tgz"
-  integrity sha512-upMEHOKMtuMu4c9gmoPlO/JqI6mDlSqwXg1aXKOTQLXAF8H5koOLRfrmi7AkdiE9A7lDXWUAZoGuD9O88cYvDQ==
-  dependencies:
-    "@react-navigation/elements" "^1.3.31"
-    color "^4.2.3"
-    warn-once "^0.1.0"
-
-"@reduxjs/toolkit@^2.2.8":
-  version "2.2.8"
-  resolved "https://registry.npmjs.org/@reduxjs/toolkit/-/toolkit-2.2.8.tgz"
-  integrity sha512-eK/ieXftPRQfaBSmzsamXEyDwkntMTY0e9SG5ETsEOv5JIPKhu3mj992t6B8FJjlnSrZBAAqdT8oMkPe4j+P9g==
-  dependencies:
-    immer "^10.0.3"
-    redux "^5.0.1"
-    redux-thunk "^3.1.0"
-    reselect "^5.1.0"
 
 "@sideway/address@^4.1.5":
   version "4.1.5"
@@ -6154,10 +6143,27 @@ react-native-image-picker@^7.1.2:
   resolved "https://registry.npmjs.org/react-native-image-picker/-/react-native-image-picker-7.1.2.tgz"
   integrity sha512-b5y5nP60RIPxlAXlptn2QwlIuZWCUDWa/YPUVjgHc0Ih60mRiOg1PSzf0IjHSLeOZShCpirpvSPGnDExIpTRUg==
 
+react-native-image-resizer@^1.4.5:
+  version "1.4.5"
+  resolved "https://registry.npmjs.org/react-native-image-resizer/-/react-native-image-resizer-1.4.5.tgz"
+  integrity sha512-33EgL3C9pyvjKpullAB6fWyD5QhoYEpNNB9rxNvUsrpAnL2mHBW7PTrUCCZudJeB6Weg7nbweKrSw1nnto5aqg==
+
 react-native-permissions@^4.1.5:
   version "4.1.5"
   resolved "https://registry.npmjs.org/react-native-permissions/-/react-native-permissions-4.1.5.tgz"
   integrity sha512-r6VMRacASmtRHS+GZ+5HQCp9p9kiE+UU9magHOZCXZLTJitdTuVHWZRrb4v4oqZGU+zAp3mZhTQftuMMv+WLUg==
+
+react-native-qr-decode-image-camera@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.npmjs.org/react-native-qr-decode-image-camera/-/react-native-qr-decode-image-camera-1.1.3.tgz"
+  integrity sha512-5b2MJ0HTxu34PdSNgE69xxSeemm2syriWN3GkVs0QPgjM/TffVTTyf+fp7cYKeI/FHHyErN/COHhLrqFReyoyg==
+  dependencies:
+    prop-types "^15.8.1"
+
+react-native-qr-image-reader@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.npmjs.org/react-native-qr-image-reader/-/react-native-qr-image-reader-1.0.5.tgz"
+  integrity sha512-f53X/rw4ghH3Bn7NynTCCYHxeNAlYPIgNUQw+DUEzAg1d+2bfuCEMDL6y1weS5FqGo8cRzmAe7sLaYi0v2buoQ==
 
 react-native-qrcode-svg@^6.3.2:
   version "6.3.2"
@@ -6205,11 +6211,6 @@ react-native-screens@^3.34.0, "react-native-screens@>= 3.0.0":
     react-freeze "^1.0.0"
     warn-once "^0.1.0"
 
-react-native-size-matters@^0.3.1:
-  version "0.3.1"
-  resolved "https://registry.npmjs.org/react-native-size-matters/-/react-native-size-matters-0.3.1.tgz"
-  integrity sha512-mKOfBLIBFBcs9br1rlZDvxD5+mAl8Gfr5CounwJtxI6Z82rGrMO+Kgl9EIg3RMVf3G855a85YVqHJL2f5EDRlw==
-
 react-native-svg@^15.6.0, react-native-svg@>=13.2.0:
   version "15.7.1"
   resolved "https://registry.npmjs.org/react-native-svg/-/react-native-svg-15.7.1.tgz"
@@ -6218,6 +6219,11 @@ react-native-svg@^15.6.0, react-native-svg@>=13.2.0:
     css-select "^5.1.0"
     css-tree "^1.1.3"
     warn-once "0.1.1"
+
+react-native-timer@^1.3.6:
+  version "1.3.6"
+  resolved "https://registry.npmjs.org/react-native-timer/-/react-native-timer-1.3.6.tgz"
+  integrity sha512-/YytE7B2YrnYwqNsoQopxg3GtHwrSH/f3pP9UgpHPpJok33YkNX+sSODI6dt75/FLDKQWIYcDHLc3WkdfKKdTg==
 
 react-native-uuid@^2.0.2:
   version "2.0.2"
@@ -6259,7 +6265,7 @@ react-native-worklets-core@*, react-native-worklets-core@^1.3.3:
   dependencies:
     string-hash-64 "^1.0.3"
 
-react-native@*, react-native@^0.75.3, react-native@>=0.40.0, react-native@>=0.59, react-native@>=0.63.4, react-native@>=0.70.0:
+react-native@*, react-native@^0.75.3, react-native@>=0.40.0, react-native@>=0.55, react-native@>=0.59, react-native@>=0.63.4, react-native@>=0.70.0, react-native@>=v0.40.0:
   version "0.75.3"
   resolved "https://registry.npmjs.org/react-native/-/react-native-0.75.3.tgz"
   integrity sha512-+Ne6u5H+tPo36sme19SCd1u2UID2uo0J/XzAJarxmrDj4Nsdi44eyUDKtQHmhgxjRGsuVJqAYrMK0abLSq8AHw==
@@ -6334,7 +6340,7 @@ react-test-renderer@18.3.1:
     react-shallow-renderer "^16.15.0"
     scheduler "^0.23.2"
 
-react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0", "react@^16.9.0 || ^17.0.0 || ^18", react@^18.0, react@^18.2.0, react@^18.3.1, react@>=16.8, react@>=17.0.0, react@>=18.1.0, react@18.3.1:
+react@*, "react@^16.0.0 || ^17.0.0 || ^18.0.0", react@^18.2.0, react@^18.3.1, react@>=16.8, react@>=17.0.0, react@>=18.1.0, react@18.3.1:
   version "18.3.1"
   resolved "https://registry.npmjs.org/react/-/react-18.3.1.tgz"
   integrity sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==
@@ -6545,6 +6551,11 @@ rimraf@~2.6.2:
   integrity sha512-mwqeW5XsA2qAejG46gYdENaxXjx9onRNCfn7L0duuP4hCuTIi/QO7PDK07KJfp1d+izWPrzEJDcSqBa0OZQriA==
   dependencies:
     glob "^7.1.3"
+
+rn-qr-generator@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.npmjs.org/rn-qr-generator/-/rn-qr-generator-1.4.0.tgz"
+  integrity sha512-L3HS1eahpAA3k2s/CGZOBuv3bELshodNHO/aw9tWVrbZagSXJ9BrDat/CUnDVNWjCl8/qt9Dv+8CYY2K1q4iMQ==
 
 run-parallel@^1.1.9:
   version "1.2.0"
@@ -7276,11 +7287,6 @@ use-latest-callback@^0.2.1:
   resolved "https://registry.npmjs.org/use-latest-callback/-/use-latest-callback-0.2.1.tgz"
   integrity sha512-QWlq8Is8BGWBf883QOEQP5HWYX/kMI+JTbJ5rdtvJLmXTIh9XoHIO3PQcmQl8BU44VKxow1kbQUHa6mQSMALDQ==
 
-use-sync-external-store@^1.0.0:
-  version "1.2.2"
-  resolved "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.2.2.tgz"
-  integrity sha512-PElTlVMwpblvbNqQ82d2n6RjStvdSoNe9FG28kNfz3WiXilJm4DdNkEzRhCZuIDwY8U08WVihhGR5iRqAwfDiw==
-
 utf8@^3.0.0:
   version "3.0.0"
   resolved "https://registry.npmjs.org/utf8/-/utf8-3.0.0.tgz"
@@ -7327,7 +7333,7 @@ vary@~1.1.2:
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
-vision-camera-cropper@^1.3.1:
+vision-camera-cropper@1.3.1:
   version "1.3.1"
   resolved "https://registry.npmjs.org/vision-camera-cropper/-/vision-camera-cropper-1.3.1.tgz"
   integrity sha512-XiaPgzMpHRUaUe7yg1pDcQPMqNWTig1u7gDLq9muTKQeCZ06DlFtzm8+bs7O+vLSy8/CUAtBc6WjPGfAk7ZV7g==

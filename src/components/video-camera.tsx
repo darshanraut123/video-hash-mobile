@@ -1,15 +1,10 @@
 import React, {useEffect, useState, useRef} from 'react';
+import {Platform, PermissionsAndroid} from 'react-native';
 import uuid from 'react-native-uuid';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Button,
-} from 'react-native';
+import {StyleSheet, View, Text, TouchableOpacity, Button} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import Canvas, {Image as CanvasImage, ImageData} from 'react-native-canvas';
-// import {crop} from 'vision-camera-cropper';
+import Canvas, {Image as CanvasImage} from 'react-native-canvas';
+import timer from 'react-native-timer';
 import {
   Camera,
   useCameraDevices,
@@ -31,8 +26,9 @@ import RNFS from 'react-native-fs';
 import Loader from './loader';
 import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
+import RNQRGenerator from 'rn-qr-generator';
 
-export default function VideoCamera() {
+export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
   // const lastFrameTimestampRef = useRef<number | null>(null);
   const cameraRef = useRef<Camera | null>(null);
@@ -82,6 +78,31 @@ export default function VideoCamera() {
       setHasPermissions(
         cameraPermission === 'granted' && microphonePermission === 'granted',
       );
+      if (Platform.OS === 'ios') {
+        const auth = await Geolocation.requestAuthorization('whenInUse');
+        console.log(auth);
+      }
+
+      if (Platform.OS === 'android') {
+        await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        if (PermissionsAndroid.RESULTS.GRANTED === 'granted') {
+          // do something if granted...
+
+          // Get GPS data
+          Geolocation.getCurrentPosition(
+            position => {
+              const {latitude, longitude, altitude} = position.coords;
+              setLocation({latitude, longitude, altitude});
+            },
+            error => {
+              console.error(error);
+            },
+            {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
+          );
+        }
+      }
     };
 
     //Prefetch once
@@ -89,27 +110,20 @@ export default function VideoCamera() {
     fetchBeacon();
 
     requestPermissions();
-    const fbTimer = setInterval(fetchBeacon, 3000);
-    const nistTimer = setInterval(getNistBeacon, 10000);
 
-    // Request permission to access location
-    Geolocation.requestAuthorization('whenInUse');
+    // timers maintained in the Map timer.intervals
+    timer.setInterval('fbTimer', fetchBeacon, 3000);
+    timer.setInterval('nistTimer', getNistBeacon, 10000);
 
-    // Get GPS data
-    Geolocation.getCurrentPosition(
-      position => {
-        const {latitude, longitude, altitude} = position.coords;
-        setLocation({latitude, longitude, altitude});
-      },
-      error => {
-        console.error(error);
-      },
-      {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
-    );
+    // const fbTimer = setInterval(fetchBeacon, 3000);
+    // const nistTimer = setInterval(getNistBeacon, 10000);
 
     return () => {
-      clearInterval(fbTimer);
-      clearInterval(nistTimer);
+      timer.intervalExists('fbTimer') && timer.clearInterval('fbTimer');
+      timer.intervalExists('nistTimer') && timer.clearInterval('nistTimer');
+
+      // clearInterval(fbTimer);
+      // clearInterval(nistTimer);
     };
   }, []);
 
@@ -119,9 +133,7 @@ export default function VideoCamera() {
         videoId: videoId.current,
         segmentId: uuid.v4(),
         nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-        nistBeaconTimeStamp: nistBeacon.current?.pulse.timeStamp,
         localBeaconUniqueId: localBeacon.current?.uniqueValue,
-        localBeaconTimestamp: localBeacon.current?.timestamp,
       };
       setJsonObject(eachQrcode);
       setQrCodeData((prev: any) => {
@@ -133,149 +145,149 @@ export default function VideoCamera() {
     }
   });
 
-  const encodeMessagesInImages = async () => {
-    const imagePaths: string[] = [];
+  // const encodeMessagesInImages = async () => {
+  //   const imagePaths: string[] = [];
 
-    const canvas: any = canvasStegRef.current;
-    const ctx = await canvas.getContext('2d');
+  //   const canvas: any = canvasStegRef.current;
+  //   const ctx = await canvas.getContext('2d');
 
-    // Create an array of promises for each encoding task
-    const encodingTasks = qrCodeDataRef.current.map(
-      (message: any, index: number) => {
-        return new Promise<void>(async (resolve, reject) => {
-          try {
-            const img = new CanvasImage(canvas);
-            const imagePath = imagePaths[index];
-            const base64complete = await RNFS.readFile(imagePath, 'base64');
-            img.src = `data:image/png;base64,${base64complete}`;
+  //   // Create an array of promises for each encoding task
+  //   const encodingTasks = qrCodeDataRef.current.map(
+  //     (message: any, index: number) => {
+  //       return new Promise<void>(async (resolve, reject) => {
+  //         try {
+  //           const img = new CanvasImage(canvas);
+  //           const imagePath = imagePaths[index];
+  //           const base64complete = await RNFS.readFile(imagePath, 'base64');
+  //           img.src = `data:image/png;base64,${base64complete}`;
 
-            img.addEventListener('load', async () => {
-              try {
-                // Set canvas dimensions to match the image
-                canvas.width = img.width;
-                canvas.height = img.height;
+  //           img.addEventListener('load', async () => {
+  //             try {
+  //               // Set canvas dimensions to match the image
+  //               canvas.width = img.width;
+  //               canvas.height = img.height;
 
-                // Draw the image onto the canvas
-                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  //               // Draw the image onto the canvas
+  //               ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                // Extract the image data
-                const imageData = await ctx.getImageData(
-                  0,
-                  0,
-                  canvas.width,
-                  canvas.height,
-                );
+  //               // Extract the image data
+  //               const imageData = await ctx.getImageData(
+  //                 0,
+  //                 0,
+  //                 canvas.width,
+  //                 canvas.height,
+  //               );
 
-                // Convert the message to binary
-                const binaryData = textToBinary(message);
+  //               // Convert the message to binary
+  //               const binaryData = textToBinary(message);
 
-                // Encode the binary data into the image
-                const flatImageData = encodeMessageInImage2(
-                  imageData.data,
-                  binaryData,
-                  canvas.width,
-                  canvas.height,
-                );
-                const newImgData =
-                  convertFlatArrayToObjectFormat(flatImageData);
+  //               // Encode the binary data into the image
+  //               const flatImageData = encodeMessageInImage2(
+  //                 imageData.data,
+  //                 binaryData,
+  //                 canvas.width,
+  //                 canvas.height,
+  //               );
+  //               const newImgData =
+  //                 convertFlatArrayToObjectFormat(flatImageData);
 
-                // Update the image data array
-                const newData: any = Object.values(newImgData);
-                const length = Object.keys(newImgData).length;
+  //               // Update the image data array
+  //               const newData: any = Object.values(newImgData);
+  //               const length = Object.keys(newImgData).length;
 
-                for (let j = 0; j < length; j += 4) {
-                  newData[j] = 0;
-                  newData[j + 1] = 0;
-                  newData[j + 2] = 0;
-                  newData[j + 1] =
-                    newData[j + 2] =
-                    newData[j + 3] =
-                      imageData.data[j / 4];
-                }
+  //               for (let j = 0; j < length; j += 4) {
+  //                 newData[j] = 0;
+  //                 newData[j + 1] = 0;
+  //                 newData[j + 2] = 0;
+  //                 newData[j + 1] =
+  //                   newData[j + 2] =
+  //                   newData[j + 3] =
+  //                     imageData.data[j / 4];
+  //               }
 
-                // Create a new ImageData object and put it on the canvas
-                const imgData = new ImageData(
-                  canvas,
-                  newData,
-                  canvas.width,
-                  canvas.height,
-                );
-                ctx.putImageData(imgData, 0, 0);
+  //               // Create a new ImageData object and put it on the canvas
+  //               const imgData = new ImageData(
+  //                 canvas,
+  //                 newData,
+  //                 canvas.width,
+  //                 canvas.height,
+  //               );
+  //               ctx.putImageData(imgData, 0, 0);
 
-                // Convert the updated canvas back to base64
-                const newBase64Image = canvas.toDataURL().split(',')[1];
+  //               // Convert the updated canvas back to base64
+  //               const newBase64Image = canvas.toDataURL().split(',')[1];
 
-                // Overwrite the original image with the new encoded image
-                await RNFS.writeFile(imagePath, newBase64Image, 'base64');
-                console.log(`Image saved with hidden message at: ${imagePath}`);
+  //               // Overwrite the original image with the new encoded image
+  //               await RNFS.writeFile(imagePath, newBase64Image, 'base64');
+  //               console.log(`Image saved with hidden message at: ${imagePath}`);
 
-                // Resolve the promise after the image is processed
-                resolve();
-              } catch (e: any) {
-                console.error('Error with encoding image:', e);
-                reject(e);
-              }
-            });
-          } catch (e: any) {
-            reject(e);
-          }
-        });
-      },
-    );
+  //               // Resolve the promise after the image is processed
+  //               resolve();
+  //             } catch (e: any) {
+  //               console.error('Error with encoding image:', e);
+  //               reject(e);
+  //             }
+  //           });
+  //         } catch (e: any) {
+  //           reject(e);
+  //         }
+  //       });
+  //     },
+  //   );
 
-    // Wait for all encoding tasks to complete
-    await Promise.all(encodingTasks);
-    console.log('All images encoded and saved.');
-  };
+  //   // Wait for all encoding tasks to complete
+  //   await Promise.all(encodingTasks);
+  //   console.log('All images encoded and saved.');
+  // };
 
-  function convertFlatArrayToObjectFormat(arr: any): any {
-    const obj: any = {};
-    arr.forEach((a: any, i: number) => {
-      obj[i] = a; // Assign array values to object with index as key
-    });
-    return obj;
-  }
+  // function convertFlatArrayToObjectFormat(arr: any): any {
+  //   const obj: any = {};
+  //   arr.forEach((a: any, i: number) => {
+  //     obj[i] = a; // Assign array values to object with index as key
+  //   });
+  //   return obj;
+  // }
 
-  const textToBinary: any = (text: string) => {
-    const binaryData = text
-      .split('')
-      .map(char => char.charCodeAt(0).toString(2).padStart(8, '0'))
-      .join('');
-    console.log(binaryData, typeof binaryData);
-    return binaryData;
-  };
+  // const textToBinary: any = (text: string) => {
+  //   const binaryData = text
+  //     .split('')
+  //     .map(char => char.charCodeAt(0).toString(2).padStart(8, '0'))
+  //     .join('');
+  //   console.log(binaryData, typeof binaryData);
+  //   return binaryData;
+  // };
 
-  function encodeMessageInImage2(
-    imageData: any,
-    binaryMessage: string,
-    width: number,
-    height: number,
-  ): Uint8ClampedArray {
-    let messageIndex = 0;
+  // function encodeMessageInImage2(
+  //   imageData: any,
+  //   binaryMessage: string,
+  //   width: number,
+  //   height: number,
+  // ): Uint8ClampedArray {
+  //   let messageIndex = 0;
 
-    // Convert the object-like imageData into a flat Uint8ClampedArray
-    const flatImageData = new Uint8ClampedArray(width * height * 4);
+  //   // Convert the object-like imageData into a flat Uint8ClampedArray
+  //   const flatImageData = new Uint8ClampedArray(width * height * 4);
 
-    // Fill the flat array with the original image data values
-    for (let i = 0; i < flatImageData.length; i++) {
-      flatImageData[i] = imageData[i] || 0; // Ensure it's clamped between 0 and 255
-    }
+  //   // Fill the flat array with the original image data values
+  //   for (let i = 0; i < flatImageData.length; i++) {
+  //     flatImageData[i] = imageData[i] || 0; // Ensure it's clamped between 0 and 255
+  //   }
 
-    // Embed the binary message into the image's pixel data
-    for (
-      let i = 0;
-      i < flatImageData.length && messageIndex < binaryMessage.length;
-      i += 4
-    ) {
-      const blueValue = flatImageData[i + 2]; // Blue channel
-      const newBlueValue =
-        (blueValue & ~1) | parseInt(binaryMessage[messageIndex], 2); // Modify LSB
-      flatImageData[i + 2] = newBlueValue; // Set new blue channel value
-      messageIndex++;
-    }
+  //   // Embed the binary message into the image's pixel data
+  //   for (
+  //     let i = 0;
+  //     i < flatImageData.length && messageIndex < binaryMessage.length;
+  //     i += 4
+  //   ) {
+  //     const blueValue = flatImageData[i + 2]; // Blue channel
+  //     const newBlueValue =
+  //       (blueValue & ~1) | parseInt(binaryMessage[messageIndex], 2); // Modify LSB
+  //     flatImageData[i + 2] = newBlueValue; // Set new blue channel value
+  //     messageIndex++;
+  //   }
 
-    return flatImageData;
-  }
+  //   return flatImageData;
+  // }
 
   const generatePhashFromFrames = (framesPaths: any) => {
     return new Promise(async (resolve: any, reject: any) => {
@@ -385,35 +397,36 @@ export default function VideoCamera() {
       const overlayDuration = 5; // duration for each watermark in seconds
 
       // Construct the filter_complex argument
-      const filterComplex = watermarkPaths
-        .map((path: string, index: number) => {
-          const startTime = index * overlayDuration;
-          const endTime = startTime + overlayDuration;
-          const prevOverlay = index === 0 ? '[0:v]' : `[v${index}]`;
-          if (index < watermarkPaths.length - 1) {
-            // For all watermarks except the last, set their visibility duration
-            return `${prevOverlay}[${
-              index + 1
-            }:v] overlay=W-w-10:10:enable='between(t,${startTime},${endTime})'[v${
-              index + 1
-            }]`;
-          } else {
-            // For the last watermark, keep it visible until the end of the video
-            return `${prevOverlay}[${
-              index + 1
-            }:v] overlay=W-w-10:10:enable='between(t,${startTime},9999)'[v${
-              index + 1
-            }]`;
-          }
-        })
-        .join(';');
+      const filterComplex =
+        watermarkPaths
+          .map((path: string, index: number) => {
+            const startTime = index * overlayDuration;
+            const endTime = startTime + overlayDuration;
+            const prevOverlay = index === 0 ? '[0:v]' : `[v${index}]`;
+            if (index < watermarkPaths.length - 1) {
+              // For all watermarks except the last, set their visibility duration
+              return `${prevOverlay}[${
+                index + 1
+              }:v] overlay=W-w-10:10:enable='between(t,${startTime},${endTime})'[v${
+                index + 1
+              }]`;
+            } else {
+              // For the last watermark, keep it visible until the end of the video
+              return `${prevOverlay}[${
+                index + 1
+              }:v] overlay=W-w-10:10:enable='between(t,${startTime},9999)'[v${
+                index + 1
+              }]`;
+            }
+          })
+          .join(';') + `; [v${watermarkPaths.length}] fps=fps=30 [vfinal]`; // Add fps filter
 
       // FFmpeg command to convert the video
-      const command: string = `-i ${inputPath} ${watermarkPaths
+      const command: string = `-r 30 -i ${inputPath} ${watermarkPaths
         .map((path: string) => `-i ${path}`)
-        .join(' ')} -filter_complex "${filterComplex}" -map [v${
-        watermarkPaths.length
-      }] -c:v mpeg4 -q:v 20 -c:a copy ${outputPath}`; // Run FFmpeg command
+        .join(
+          ' ',
+        )} -filter_complex "${filterComplex}" -map [vfinal] -c:v mpeg4 -q:v 10 -c:a copy ${outputPath}`; // Use [vfinal] as output
 
       const session = await FFmpegKit.execute(command);
 
@@ -430,29 +443,84 @@ export default function VideoCamera() {
     }
   };
 
+  // // Function to crop the top right corner programmatically
+  // const cropImage = async (uri: string) => {
+  //   try {
+  //     // Get image dimensions
+  //     const {width, height}: any = await new Promise((resolve, reject) => {
+  //       Image.getSize(
+  //         uri,
+  //         (imgWidth, imgHeight) =>
+  //           resolve({width: imgWidth, height: imgHeight}),
+  //         reject,
+  //       );
+  //     });
+
+  //     console.log(width, height);
+  //     const cropWidth = width / 2; // Half the width
+  //     const cropHeight = height / 2; // Half the height
+
+  //     const cropped = await ImageCropPicker.openCropper({
+  //       path: uri,
+  //       width: cropWidth,
+  //       height: cropHeight,
+  //       compressImageMaxWidth: 1000, // Adjust to maintain quality
+  //       compressImageMaxHeight: 1000, // Adjust to maintain quality
+  //       cropping: true,
+  //       cropperCircleOverlay: false,
+  //       mediaType: 'photo',
+  //     });
+  //     return cropped.path;
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
   const saveQRCode = async () => {
     return new Promise(async (resolve, reject) => {
-      if (qrCodeRefs.current) {
-        const savePromises = qrCodeRefs.current.map(
-          (eachRef: any, index: number) => {
+      if (qrCodeDataRef.current) {
+        console.log('qrCodeDataRef==> ' + qrCodeDataRef.current);
+        const savePromises = qrCodeDataRef.current.map(
+          (eachQrcodeData: any, index: number) => {
             return new Promise((resolveInner: any) => {
-              eachRef.toDataURL(async (data: string) => {
-                try {
-                  const filePath = `${RNFS.CachesDirectoryPath}/qrcode_${index}.png`;
-                  const fileExists = await RNFS.exists(filePath);
-                  if (fileExists) {
-                    await RNFS.unlink(filePath);
-                  }
-                  await RNFS.writeFile(filePath, data, 'base64');
-                  resolveInner(filePath); // Resolve the promise with file path
-                } catch (err) {
-                  console.error('Error saving QR code image:', err);
-                  resolveInner(undefined); // Resolve with undefined in case of error
-                }
-              });
+              RNQRGenerator.generate({
+                value: JSON.stringify(eachQrcodeData), // Data to encode in the QR code
+                height: 200, // Height of the QR code
+                width: 200, // Width of the QR code
+                correctionLevel: 'H', // Error correction level (H for high)
+                fileName: `qrcode_${index}`,
+              })
+                .then(response => {
+                  const {uri} = response;
+                  console.log('QR code generated:', uri);
+                  resolveInner(uri);
+                })
+                .catch(error => {
+                  console.log('Cannot detect QR code in image', error);
+                });
             });
           },
         );
+
+        //   (eachRef: any, index: number) => {
+        //     return new Promise((resolveInner: any) => {
+        //       eachRef.toDataURL(async (data: string) => {
+        //         try {
+        //           const filePath = `${RNFS.CachesDirectoryPath}/qrcode_${index}.png`;
+        //           const fileExists = await RNFS.exists(filePath);
+        //           if (fileExists) {
+        //             await RNFS.unlink(filePath);
+        //           }
+        //           await RNFS.writeFile(filePath, data, 'base64');
+        //           resolveInner(filePath); // Resolve the promise with file path
+        //         } catch (err) {
+        //           console.error('Error saving QR code image:', err);
+        //           resolveInner(undefined); // Resolve with undefined in case of error
+        //         }
+        //       });
+        //     });
+        //   },
+        // );
 
         const filePaths = await Promise.all(savePromises); // Wait for all QR codes to be saved
         resolve(filePaths); // Resolve with array of file paths
@@ -476,16 +544,22 @@ export default function VideoCamera() {
 
       const command = `-i ${path} -vf "fps=1/5" -vsync 0 ${
         RNFS.CachesDirectoryPath
-      }/${Date.now()}finalframes%d.jpg`;
+      }/${Date.now()}finalframes%d.png`;
 
       const session = await FFmpegKit.execute(command);
       console.log('session' + session);
       files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
       frameFiles = files.filter(file => {
-        return file.name.includes('frames') && file.isFile();
+        return file.name.includes('finalframes') && file.isFile();
       });
-      const framePaths = frameFiles.map(eachFile => eachFile.path);
-      return framePaths;
+      const unsorted = frameFiles.map(eachFile => eachFile.path);
+      // Sort the file paths based on the numeric suffix before .jpg
+      const sortedFilePaths = unsorted.sort((a, b) => {
+        const numA = parseInt(a.match(/finalframes(\d+)\.png/)[1]);
+        const numB = parseInt(b.match(/finalframes(\d+)\.png/)[1]);
+        return numA - numB;
+      });
+      return sortedFilePaths;
     } catch (e: any) {
       console.log(e.message);
     }
@@ -496,13 +570,10 @@ export default function VideoCamera() {
       try {
         videoId.current = uuid.v4();
         let eachQrcode = {
-          segmentNumber: 1,
           videoId: videoId.current,
           segmentId: uuid.v4(),
           nistBeaconUniqueId: nistBeacon.current.pulse.outputValue,
-          nistBeaconTimeStamp: nistBeacon.current.pulse.timeStamp,
           localBeaconUniqueId: localBeacon.current.uniqueValue,
-          localBeaconTimestamp: localBeacon.current.timestamp,
         };
         setJsonObject(eachQrcode);
         // lastFrameTimestampRef.current = null;
@@ -514,21 +585,21 @@ export default function VideoCamera() {
             setIsLoaderActive('Generating QR codes...');
             isRecordingShared.value = false;
             setIsRecording(false);
-            console.log(finishedVideo);
+            console.log('finishedVideo==> ' + finishedVideo);
             const qrCodePaths: any = await saveQRCode();
             console.log('qrCodePaths ie watermark paths==> ' + qrCodePaths);
             setIsLoaderActive('Embedding QR codes...');
-            let videoOutputPathCachePath = await embedQrCodesInVideo(
+            let videoOutputPath = await embedQrCodesInVideo(
               finishedVideo.path,
               qrCodePaths,
             );
-            console.log(
-              'Qrcode embeded video path==> ' + videoOutputPathCachePath,
-            );
-            setIsLoaderActive('Extracting frames for Steganography...');
+            console.log('Qrcode embeded video path==> ' + videoOutputPath);
+
+            // Commented steganography code
+            // setIsLoaderActive('Extracting frames for Steganography...');
 
             // const allFramesPaths: any = await extractAllFrames(
-            //   videoOutputPathCachePath,
+            //   videoOutputPath,
             // );
             // console.log(allFramesPaths.length);
             // setIsLoaderActive('Now stitching video...');
@@ -537,7 +608,7 @@ export default function VideoCamera() {
             // console.log(finalVideoPath);
             setIsLoaderActive('Extracting frames for hashing...');
             const segmentFramePaths: any = await extractSegmentFramesForPHash(
-              videoOutputPathCachePath,
+              videoOutputPath,
             );
             console.log(
               'extractedFramesPaths==> ' + JSON.stringify(segmentFramePaths),
@@ -578,25 +649,25 @@ export default function VideoCamera() {
       },
     );
     const apiBody = {
-      VideoID: videoId.current,
-      FullVideoHash: uuid.v4(),
-      CellTower: {
+      videoId: videoId.current,
+      fullVideoHash: pHashes.join(''),
+      cellTower: {
         timestamp: new Date().toISOString(),
         network: {
           carrierName,
           ipAddress,
         },
       },
-      GPS: {
-        latitude: location.latitude || 0,
-        longitude: location.longitude || 0,
-        altitude: location.altitude || 0,
+      gps: {
+        latitude: location?.latitude || 0,
+        longitude: location?.longitude || 0,
+        altitude: location?.altitude || 0,
         timestamp: new Date().toISOString(),
       },
-      NISTRandom: {
+      nistRandom: {
         nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
       },
-      Device: {
+      device: {
         appSpecificID: deviceId,
       },
       segments,
@@ -610,61 +681,56 @@ export default function VideoCamera() {
     console.log(res);
   };
 
-  const myFun = async () => {
-    const aaaa = await extractAllFrames(
-      '/data/user/0/com.awesomeproject/cache/video_1728332525188.mov',
-    );
-    console.log(aaaa.length);
-    // const bbbb = await stitchAllFrames();
-    // console.log(bbbb);
+  const gotoVerify = async () => {
+    navigation.navigate('Verify', {name: 'Verify'});
   };
 
-  const stitchAllFrames = async () => {
-    try {
-      const framesOpPath = RNFS.PicturesDirectoryPath + '/allframes_%d.jpg';
-      const audioOpPath = RNFS.PicturesDirectoryPath + '/audio.mp3';
-      const outputPath =
-        RNFS.PicturesDirectoryPath + `/${Date.now()}_video.mp4`;
+  // const stitchAllFrames = async () => {
+  //   try {
+  //     const framesOpPath = RNFS.PicturesDirectoryPath + '/allframes_%d.jpg';
+  //     const audioOpPath = RNFS.PicturesDirectoryPath + '/audio.mp3';
+  //     const outputPath =
+  //       RNFS.PicturesDirectoryPath + `/${Date.now()}_video.mp4`;
 
-      // Create FFmpeg command
-      const command = `-i ${framesOpPath} -i ${audioOpPath} -c:v mpeg4 -pix_fmt yuv420p ${outputPath}`;
+  //     // Create FFmpeg command
+  //     const command = `-i ${framesOpPath} -i ${audioOpPath} -c:v mpeg4 -pix_fmt yuv420p ${outputPath}`;
 
-      // Execute FFmpeg command
-      await FFmpegKit.execute(command);
-      console.log('Video stitched successfully with audio!');
-      return outputPath;
-    } catch (error) {
-      console.error('Error stitching video:', error);
-    }
-  };
+  //     // Execute FFmpeg command
+  //     await FFmpegKit.execute(command);
+  //     console.log('Video stitched successfully with audio!');
+  //     return outputPath;
+  //   } catch (error) {
+  //     console.error('Error stitching video:', error);
+  //   }
+  // };
 
-  const extractAllFrames = async (videoOutputPathCachePath: any) => {
-    let files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
-    let frameFiles = files.filter(
-      file => ['frames', 'audio'].includes(file.name) && file.isFile(),
-    );
+  // const extractAllFrames = async (videoOutputPathCachePath: any) => {
+  //   let files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
+  //   let frameFiles = files.filter(
+  //     file => ['frames', 'audio'].includes(file.name) && file.isFile(),
+  //   );
 
-    // Delete each file that starts with "frames"
-    for (const file of frameFiles) {
-      await RNFS.unlink(file.path);
-    }
-    const framesOpPath = RNFS.PicturesDirectoryPath + '/allframes_%d.jpg';
-    const audioOpPath = RNFS.PicturesDirectoryPath + '/audio.mp3';
-    // //Extract audio
-    await FFmpegKit.execute(
-      `-i ${videoOutputPathCachePath} -codec:a libmp3lame -qscale:a 2 ${audioOpPath}`,
-    );
-    //Extract all frames
-    await FFmpegKit.execute(`-i ${videoOutputPathCachePath} ${framesOpPath}`);
+  //   // Delete each file that starts with "frames"
+  //   for (const file of frameFiles) {
+  //     await RNFS.unlink(file.path);
+  //   }
+  //   const framesOpPath = RNFS.PicturesDirectoryPath + '/allframes_%d.jpg';
+  //   const audioOpPath = RNFS.PicturesDirectoryPath + '/audio.mp3';
+  //   // //Extract audio
+  //   await FFmpegKit.execute(
+  //     `-i ${videoOutputPathCachePath} -codec:a libmp3lame -qscale:a 2 ${audioOpPath}`,
+  //   );
+  //   //Extract all frames
+  //   await FFmpegKit.execute(`-i ${videoOutputPathCachePath} ${framesOpPath}`);
 
-    files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
-    frameFiles = files.filter(
-      file => file.name.includes('frames') && file.isFile(),
-    );
-    console.log('frameFiles length==> ' + frameFiles.length);
-    const allFramesPaths = frameFiles.map(frm => frm.path);
-    return allFramesPaths;
-  };
+  //   files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
+  //   frameFiles = files.filter(
+  //     file => file.name.includes('frames') && file.isFile(),
+  //   );
+  //   console.log('frameFiles length==> ' + frameFiles.length);
+  //   const allFramesPaths = frameFiles.map(frm => frm.path);
+  //   return allFramesPaths;
+  // };
 
   const stopRecording = () => {
     if (cameraRef.current && isRecording) {
@@ -748,7 +814,7 @@ export default function VideoCamera() {
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
 
-          <Button title="hey" onPress={myFun} />
+          <Button title="Go to verify" onPress={gotoVerify} />
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
             <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
