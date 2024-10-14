@@ -2,6 +2,8 @@ import { NavigationProp } from '@react-navigation/native';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
 import { Paths } from '../../../navigation/path';
+import CheckBoxIcon from 'react-native-elements/dist/checkbox/CheckBoxIcon';
+// import { CheckBox } from 'react-native-elements';
 
 interface SignUpScreenProps {
   navigation: NavigationProp<any>;  // Add explicit type for navigation
@@ -12,7 +14,7 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  // const [agree, setAgree] = useState(false);
+  const [agree, setAgree] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -57,10 +59,12 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
       />
 
       <View style={styles.agreement}>
-        {/* <CheckBox
-          value={agree}
-          onValueChange={() => setAgree(!agree)}
-        /> */}
+        <CheckBoxIcon
+          checked={agree}
+          // value={agree}
+          onIconPress={() => setAgree(!agree)}
+          // onValueChange={() => setAgree(!agree)}
+        />
         <Text style={styles.agreementText}>I agree to the <Text style={styles.link}>Terms of Service</Text> and <Text style={styles.link}>Privacy Policy</Text>.</Text>
       </View>
 
@@ -111,6 +115,8 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 14,
     color: '#333',
+    flexWrap: 'wrap',
+    flex: 1,
   },
   link: {
     color: '#007AFF',

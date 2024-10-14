@@ -8,8 +8,9 @@ import {findVideoHash} from '../api-requests/requests';
 import Loader from './loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../util/phash';
+import { Paths } from '../navigation/path';
 
-export default function Verify() {
+export default function Verify({navigation}: any) {
   const [videoFound, setVideoFound] = React.useState<any>(null);
   const [isLoaderActive, setIsLoaderActive] = React.useState<any>(null);
   const canvasRef = React.useRef<any>();
@@ -298,6 +299,8 @@ export default function Verify() {
           onPress={verifyVideo}
         />
         <Button title="convert variant" onPress={convert} />
+        <Button title="Sign In Page" onPress={() => navigation.navigate(Paths.Auth, { screen: Paths.SignIn })} />
+        <Button title="Sign Up Page" onPress={() => navigation.navigate(Paths.Auth, { screen: Paths.SignUp })} />
         <ScrollView>
           <Canvas
             style={{backgroundColor: 'white', height: 32, width: 32}}
