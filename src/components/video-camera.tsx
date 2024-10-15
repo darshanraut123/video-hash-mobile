@@ -52,7 +52,7 @@ export default function VideoCamera({navigation}: any) {
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
-  }, [isRecording]);
+  }, [isRecording, isRecordingShared]);
 
   let localBeacon = useRef<any>(null);
   useEffect(() => {
