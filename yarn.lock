@@ -6225,6 +6225,11 @@ react-native-vector-icons@^10.2.0, react-native-vector-icons@>7.0.0:
     prop-types "^15.7.2"
     yargs "^16.1.1"
 
+react-native-video@^6.6.4:
+  version "6.6.4"
+  resolved "https://registry.npmjs.org/react-native-video/-/react-native-video-6.6.4.tgz"
+  integrity sha512-YBaStWAhWZMDaRG7Q9u173Si7ho7I3xwrS1SCKnProeXfdaS7vZNbt84ueFwufa4YxZ0JZoyOypH0tA0JZK3GQ==
+
 react-native-view-shot@^3.8.0:
   version "3.8.0"
   resolved "https://registry.npmjs.org/react-native-view-shot/-/react-native-view-shot-3.8.0.tgz"

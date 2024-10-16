@@ -27,6 +27,8 @@ import Loader from './loader';
 import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
+import { Paths } from '../navigation/path';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -846,7 +848,7 @@ export default function VideoCamera({navigation}: any) {
                   </Svg>
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity
+                  <TouchableOpacity
                   onPress={startRecording}
                   style={styles.start_recording_button}>
                   <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
@@ -859,6 +861,11 @@ export default function VideoCamera({navigation}: any) {
                   </Svg>
                 </TouchableOpacity>
               )}
+              {!isRecording && <TouchableOpacity
+                onPress={() => navigation.navigate(Paths.Home,{ screen: Paths.VideoLibrary })}
+                style={styles.library_button}>
+                <Icon name="image-outline" size={40} color="#00ACc1" />
+              </TouchableOpacity>}
             </View>
           )}
         </>
@@ -908,5 +915,16 @@ const styles = StyleSheet.create({
   absQrcodeContainer: {
     position: 'absolute',
     zIndex: -1,
+  },
+  library_button: {
+    position: 'absolute', // Position it absolutely
+    left: 8, // Align it to the left
+    bottom: 2, // Align it to the bottom
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f0f0f0', // Customize button background color
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

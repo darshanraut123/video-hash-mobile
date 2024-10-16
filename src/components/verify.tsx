@@ -322,6 +322,12 @@ export default function Verify({navigation}: any) {
             navigation.navigate(Paths.Auth, {screen: Paths.SignUp})
           }
         />
+        <Button
+          title="Video Library Page"
+          onPress={() =>
+            navigation.navigate(Paths.Home, {screen: Paths.VideoLibrary})
+          }
+        />
         <ScrollView>
           <Canvas
             style={{backgroundColor: 'white', height: 32, width: 32}}
