@@ -2,152 +2,60 @@ import {View, Text, Button, ScrollView, Alert} from 'react-native';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
-import {FFmpegKit} from 'ffmpeg-kit-react-native';
 import RNQRGenerator from 'rn-qr-generator';
 import {findVideoHash} from '../api-requests/requests';
 import Loader from './loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../util/phash';
 import {Paths} from '../navigation/path';
+import {
+  extractEveryFrameWithTimestamp,
+  extractFirstFrameAndGetVideoInfoFromDB,
+  extractSegmentFramesForPHash,
+  extractSegmentFramesForQrcode,
+  getVideoDuration,
+} from '../util/ffmpegUtil';
+import {percentageMatch} from '../util/common';
 
 export default function Verify({navigation}: any) {
-  const [videoFound, setVideoFound] = React.useState<any>(null);
+  const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
+    React.useState<any>(null);
   const [isLoaderActive, setIsLoaderActive] = React.useState<any>(null);
   const canvasRef = React.useRef<any>();
+  let currentSegmentInfo: any = null;
 
   async function verifyVideo() {
     try {
-      setVideoFound(null);
+      setVideoRecordFoundInfo(null);
       const res: any = await launchImageLibrary({mediaType: 'video'});
       const uri: any = res.assets[0].uri;
       console.log(uri);
-      setIsLoaderActive('Extracting frames for decoding qrcode');
-      const frms = await extractSegmentFramesForPHash(uri);
-      console.log('extractSegmentFramesForPHash ==> ' + JSON.stringify(frms));
-      const generatedHashes: any = await generatePhashFromFrames(frms);
-      const verifycroppedframePaths: any = await extractSegmentFramesForQrcode(
-        uri,
-      );
-      console.log(
-        'verifycroppedframePaths paths ==> ' +
-          JSON.stringify(verifycroppedframePaths),
-      );
 
-      let videoId: string = '';
-      setIsLoaderActive('Decoding qr codes');
+      let videoInfoFromDB = await extractFirstFrameAndGetVideoInfoFromDB(uri);
+      videoInfoFromDB = videoInfoFromDB.document;
+      console.log('videoInfoFromDB ' + JSON.stringify(videoInfoFromDB));
 
-      for (let index = 0; index < verifycroppedframePaths.length; index++) {
-        const response = await RNQRGenerator.detect({
-          uri: verifycroppedframePaths[index],
-          // base64: verifycroppedframePaths[index], // If uri is passed this option will be skipped.
-        });
-        const {values} = response; // Array of detected QR code values. Empty if nothing found.
-        console.log(values);
-        if (values.length) {
-          const decodedQrcode: any = JSON.parse(values[0]);
-          videoId = decodedQrcode.videoId;
-          break;
-        }
-      }
-      setIsLoaderActive('Fetching records for matching videos');
-      if (!videoId) {
+      if (!videoInfoFromDB) {
         Alert.alert('No Records found');
         return;
       }
-      const response = await findVideoHash(videoId);
-      if (response.document) {
-        setVideoFound(response.document);
-        const dbHashSegments: any[] = response.document.segments.map(
-          (s: any) => s.videoHash,
-        );
-        console.log('dbSegments ==> ' + JSON.stringify(dbHashSegments));
-        console.log('generatedSegments ==> ' + JSON.stringify(generatedHashes));
-
-        if (dbHashSegments.length === generatedHashes.length) {
-          const averageDistance = percentageMatch(
-            dbHashSegments,
-            generatedHashes,
-          );
-          setVideoFound(response.document);
-          Alert.alert(averageDistance + ' % Match');
-        } else {
-          Alert.alert('No records found!');
-        }
+      const verifyVideoDuration = await getVideoDuration(uri);
+      const dbVideoDuration = parseFloat(videoInfoFromDB.duration).toFixed(1);
+      console.log(
+        `verifyVideoDuration: ${verifyVideoDuration} | dbVideoDuration: ${dbVideoDuration}`,
+      );
+      if (verifyVideoDuration === dbVideoDuration) {
+        await verifyNonTrimmedVideo(uri);
       } else {
-        setVideoFound(null);
-        Alert.alert('No records found!');
+        await verifyTrimmedVideo({uri, videoInfoFromDB});
       }
     } catch (error) {
       console.log('Error picking video: ', error);
-      setVideoFound(null);
+      setVideoRecordFoundInfo(null);
     } finally {
       setIsLoaderActive(null);
     }
   }
-
-  function hammingDistance(str1: string, str2: string) {
-    let distance = 0;
-
-    // Calculate the Hamming distance
-    for (let i = 0; i < str1.length; i++) {
-      if (str1[i] !== str2[i]) {
-        distance++;
-      }
-    }
-
-    return distance;
-  }
-
-  function percentageMatch(arr1: any[], arr2: any[]) {
-    let totalDistance = 0;
-    let totalBits = arr1[0].length; // Assume all hashes have the same length
-    // Calculate Hamming distances for each pair
-    for (let i = 0; i < arr1.length; i++) {
-      totalDistance += hammingDistance(arr1[i], arr2[i]);
-    }
-    const avgHammingDistance = totalDistance / arr1.length;
-
-    // Calculate and return the average Hamming
-    const percentageHammingDistance = (avgHammingDistance / totalBits) * 100;
-    return 100 - percentageHammingDistance;
-  }
-
-  const extractSegmentFramesForPHash = async (path: any) => {
-    try {
-      let files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
-      let frameFiles = files.filter(file => {
-        return file.name.includes('frames') && file.isFile();
-      });
-
-      // Delete each file that starts with "frames"
-      for (const file of frameFiles) {
-        await RNFS.unlink(file.path);
-      }
-
-      const command = `-i ${path} -vf "fps=1/5" -vsync 0 ${
-        RNFS.CachesDirectoryPath
-      }/${Date.now()}finalframes%d.png`;
-
-      const session = await FFmpegKit.execute(command);
-      console.log('session' + session);
-      files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
-      frameFiles = files.filter(file => {
-        return file.name.includes('finalframes') && file.isFile();
-      });
-      // Sort the file paths
-      const unsorted = frameFiles.map(eachFile => eachFile.path);
-      // Sort the file paths based on the numeric suffix before .jpg
-      const sortedFilePaths = unsorted.sort((a, b) => {
-        const numA = parseInt(a.match(/finalframes(\d+)\.png/)[1]);
-        const numB = parseInt(b.match(/finalframes(\d+)\.png/)[1]);
-        return numA - numB;
-      });
-
-      return sortedFilePaths;
-    } catch (e: any) {
-      console.log(e.message);
-    }
-  };
 
   const generatePhashFromFrames = (framesPaths: any) => {
     return new Promise(async (resolve: any, reject: any) => {
@@ -245,60 +153,116 @@ export default function Verify({navigation}: any) {
     });
   };
 
-  const extractSegmentFramesForQrcode = async (path: any) => {
-    try {
-      let files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
-      let frameFiles = files.filter(file => {
-        return file.name.includes('frames') && file.isFile();
-      });
+  async function verifyNonTrimmedVideo(uri: string) {
+    setIsLoaderActive('Extracting frames for decoding qrcode');
+    const frms = await extractSegmentFramesForPHash(uri);
+    console.log('extractSegmentFramesForPHash ==> ' + JSON.stringify(frms));
+    const generatedHashes: any = await generatePhashFromFrames(frms);
+    const verifycroppedframePaths: any = await extractSegmentFramesForQrcode(
+      uri,
+    );
+    console.log(
+      'verifycroppedframePaths paths ==> ' +
+        JSON.stringify(verifycroppedframePaths),
+    );
 
-      // Delete each file that starts with "frames"
-      for (const file of frameFiles) {
-        await RNFS.unlink(file.path);
+    let videoId: string = '';
+    setIsLoaderActive('Decoding qr codes');
+
+    for (let index = 0; index < verifycroppedframePaths.length; index++) {
+      const response = await RNQRGenerator.detect({
+        uri: verifycroppedframePaths[index],
+      });
+      const {values} = response; // Array of detected QR code values. Empty if nothing found.
+      console.log(values);
+      if (values.length) {
+        const decodedQrcode: any = JSON.parse(values[0]);
+        videoId = decodedQrcode.videoId;
+        break;
       }
-
-      let command = `-y -i ${path} -vf "fps=1/5, crop=iw/2:ih/2:iw/2:0" -vsync 0 ${
-        RNFS.CachesDirectoryPath
-      }/${Date.now()}verifycroppedframes%d.png`;
-
-      let session = await FFmpegKit.execute(command);
-      console.log('session' + session);
-
-      files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
-      frameFiles = files.filter(file => {
-        return file.name.includes('verifycroppedframes') && file.isFile();
-      });
-
-      const unsorted = frameFiles.map(eachFile => eachFile.path);
-      // Sort the file paths based on the numeric suffix before .jpg
-      const sortedFilePaths = unsorted.sort((a, b) => {
-        const numA = parseInt(a.match(/verifycroppedframes(\d+)\.png/)[1]);
-        const numB = parseInt(b.match(/verifycroppedframes(\d+)\.png/)[1]);
-        return numA - numB;
-      });
-
-      return sortedFilePaths;
-    } catch (e: any) {
-      console.log(e.message);
     }
-  };
+    setIsLoaderActive('Fetching records for matching videos');
+    if (!videoId) {
+      Alert.alert('No Records found');
+      return;
+    }
+    const response = await findVideoHash(videoId);
+    if (response.document) {
+      setVideoRecordFoundInfo(response.document);
+      const dbHashSegments: any[] = response.document.segments.map(
+        (s: any) => s.videoHash,
+      );
+      console.log('dbSegments ==> ' + JSON.stringify(dbHashSegments));
+      console.log('generatedSegments ==> ' + JSON.stringify(generatedHashes));
 
-  async function convert() {
-    // const res: any = await launchImageLibrary({mediaType: 'video'});
-    // const uri: any = res.assets[0].uri;
-    // console.log(uri);
-    // // let command = `-y -i ${uri} -vf "hue=h=60:s=1" -c:a copy ${
-    // //   RNFS.PicturesDirectoryPath
-    // // }/${Date.now()}tinted.mp4`;
-    // // let command = `-y -i ${uri} -b:v 1M -c:a copy ${
-    // //   RNFS.PicturesDirectoryPath
-    // // }/${Date.now()}compressed.mp4`;
+      if (dbHashSegments.length === generatedHashes.length) {
+        const averageDistance = percentageMatch(
+          dbHashSegments,
+          generatedHashes,
+        );
+        setVideoRecordFoundInfo(response.document);
+        Alert.alert(averageDistance + ' % Match');
+      } else {
+        Alert.alert('No records found!');
+      }
+    } else {
+      setVideoRecordFoundInfo(null);
+      Alert.alert('No records found!');
+    }
+  }
 
-    // let command = `-y -i ${uri} -vf "scale=720:1280" ${
-    //   RNFS.PicturesDirectoryPath
-    // }/${Date.now()}_720x1280.mp4`;
+  async function verifyTrimmedVideo({uri, videoInfoFromDB}: any) {
+    console.log('duration not same ie video is trimmed ' + uri);
+    // const verifyVideoSegmentHashes: any[] = [];
+    let videoSegmentsInfoFromDB: any = videoInfoFromDB.segments;
+    const videoSegmentHashesFromDB: string[] = videoSegmentsInfoFromDB.map(
+      (eachFromdb: any) => eachFromdb.videoHash,
+    );
+    console.log(
+      'DB segment video hashes ' + JSON.stringify(videoSegmentHashesFromDB),
+    );
 
-    // await FFmpegKit.execute(command);
+    const sortedFilePaths: string[] = await extractEveryFrameWithTimestamp(uri);
+    console.log('first ' + sortedFilePaths[0]);
+    console.log(`last ${sortedFilePaths[sortedFilePaths.length - 1]}`);
+    console.log('length ' + sortedFilePaths.length);
+    for (let index = 0; index < sortedFilePaths.length; index++) {
+      const response = await RNQRGenerator.detect({
+        uri: sortedFilePaths[index],
+      });
+      const {values}: any = response; // Array of detected QR code values. Empty if nothing found.
+
+      if (values.length) {
+        const qrcodeData: any = JSON.parse(values[0]);
+        if (!currentSegmentInfo) {
+          console.log('Found first segment ID of trimmed part');
+          currentSegmentInfo = qrcodeData;
+          continue;
+        } else if (currentSegmentInfo.segmentId === qrcodeData.segmentId) {
+          // console.log('Same segment id found, waiting for QR code to change');
+          continue;
+        } else {
+          console.log('QR code change found');
+          currentSegmentInfo = qrcodeData;
+          let timestampOfChange: string = sortedFilePaths[index]
+            .split('_')[1]
+            .split('.')[0];
+          console.log(+timestampOfChange / 30 + ' seconds');
+          const generatedHashes: any = await generatePhashFromFrames([
+            sortedFilePaths[index],
+          ]);
+          const onlyRequiredPhash: string = generatedHashes[0];
+          console.log(
+            'Extracted Phash ' +
+              onlyRequiredPhash +
+              ' for frame: ' +
+              sortedFilePaths[index],
+          );
+        }
+      } else {
+        console.log('failed to detect QR code');
+      }
+    }
   }
 
   return (
@@ -309,7 +273,7 @@ export default function Verify({navigation}: any) {
           title="Please tap to select a video file from library"
           onPress={verifyVideo}
         />
-        <Button title="convert variant" onPress={convert} />
+        <Button title="convert variant" onPress={extractSegmentFramesForPHash} />
         <Button
           title="Sign In Page"
           onPress={() =>
@@ -324,13 +288,14 @@ export default function Verify({navigation}: any) {
         />
         <ScrollView>
           <Canvas
+            // eslint-disable-next-line react-native/no-inline-styles
             style={{backgroundColor: 'white', height: 32, width: 32}}
             ref={canvasRef}
           />
-          {videoFound &&
-            Object.keys(videoFound).map((k, i) => (
+          {videoRecordFoundInfo &&
+            Object.keys(videoRecordFoundInfo).map((k, i) => (
               <Text key={i}>{`${k} : ${JSON.stringify(
-                Object.values(videoFound)[i],
+                Object.values(videoRecordFoundInfo)[i],
               )}`}</Text>
             ))}
         </ScrollView>
