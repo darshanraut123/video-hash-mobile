@@ -69,7 +69,7 @@ const App = () => {
           });
 
           // canvas.toDataURL().then((newBase64Image: any) => {
-          //   const filePath = `${RNFS.PicturesDirectoryPath}/encoded_image2.png`;
+          //   const filePath = `${RNFS.CachesDirectoryPath}/encoded_image2.png`;
           //   RNFS.exists(filePath).then(ifTrue => {
           //     ifTrue && RNFS.unlink(filePath);
           //   });

@@ -15,7 +15,7 @@ import {
   extractSegmentFramesForQrcode,
   getVideoDuration,
 } from '../util/ffmpegUtil';
-import {hammingDistance, percentageMatch} from '../util/common';
+import {percentageMatch} from '../util/common';
 
 export default function Verify({navigation}: any) {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
@@ -32,9 +32,6 @@ export default function Verify({navigation}: any) {
       console.log(uri);
 
       let videoInfoFromDB = await extractFirstFrameAndGetVideoInfoFromDB(uri);
-      videoInfoFromDB = videoInfoFromDB.document;
-      console.log('videoInfoFromDB ' + JSON.stringify(videoInfoFromDB));
-
       if (!videoInfoFromDB) {
         Alert.alert('No Records found');
         return;
@@ -47,7 +44,11 @@ export default function Verify({navigation}: any) {
       if (verifyVideoDuration === dbVideoDuration) {
         await verifyNonTrimmedVideo(uri);
       } else {
-        await verifyTrimmedVideo({uri, videoInfoFromDB});
+        setIsLoaderActive('Starting verification process');
+        await verifyTrimmedVideo({
+          uri,
+          videoInfoFromDB: videoInfoFromDB.document,
+        });
       }
     } catch (error) {
       console.log('Error picking video: ', error);
@@ -213,21 +214,14 @@ export default function Verify({navigation}: any) {
 
   async function verifyTrimmedVideo({uri, videoInfoFromDB}: any) {
     console.log('duration not same ie video is trimmed ' + uri);
-    // const verifyVideoSegmentHashes: any[] = [];
-    let videoSegmentsInfoFromDB: any = videoInfoFromDB.segments;
-    const videoSegmentHashesFromDB: string[] = videoSegmentsInfoFromDB.map(
-      (eachFromdb: any) => eachFromdb.videoHash,
-    );
-    console.log(
-      'DB segment video hashes ' + JSON.stringify(videoSegmentHashesFromDB),
-    );
-
+    const videoSegmentsInfoFromDB: any = videoInfoFromDB.segments;
+    const videoSegmentInfoFromVerifyVideo: any[] = [];
     const sortedFilePaths: string[] = await extractEveryFrameWithTimestamp(uri);
     console.log('first ' + sortedFilePaths[0]);
     console.log(`last ${sortedFilePaths[sortedFilePaths.length - 1]}`);
     console.log('length ' + sortedFilePaths.length);
     let flag: boolean = true;
-    const percentage4Average: number[] = [];
+    setIsLoaderActive('Extracting QR codes');
     for (let index = 0; index < sortedFilePaths.length; index++) {
       const response = await RNQRGenerator.detect({
         uri: sortedFilePaths[index],
@@ -253,6 +247,8 @@ export default function Verify({navigation}: any) {
               ' for frame: ' +
               sortedFilePaths[index],
           );
+          currentSegmentInfo.verifyPhash = onlyRequiredPhash;
+          videoSegmentInfoFromVerifyVideo.push(currentSegmentInfo);
           continue;
         } else if (currentSegmentInfo.segmentId === qrcodeData.segmentId) {
           // console.log('Same segment id found, waiting for QR code to change');
@@ -275,21 +271,61 @@ export default function Verify({navigation}: any) {
               sortedFilePaths[index],
           );
           if (flag) {
+            // First change from one hash to another hash found
             console.log(`timeStampseconds: ${timeStampseconds}`);
             console.log(`Trimmed video duration : ${5 - timeStampseconds}`);
-            percentage4Average.push(timeStampseconds * 20);
             flag = false;
-            continue;
           }
-          percentage4Average.push(
-            hammingDistance(videoSegmentHashesFromDB[index], onlyRequiredPhash),
-          );
+          currentSegmentInfo.verifyPhash = onlyRequiredPhash;
+          videoSegmentInfoFromVerifyVideo.push(currentSegmentInfo);
         }
       } else {
         console.log('failed to detect QR code');
       }
     }
-    console.log(`FINAL ARR ===> ${JSON.stringify(percentage4Average)}`);
+
+    setIsLoaderActive('Fetching matching records');
+
+    console.log(`FINAL DB ARR ===> ${JSON.stringify(videoSegmentsInfoFromDB)}`);
+    console.log(
+      `FINAL Verify Vid ARR ===> ${JSON.stringify(
+        videoSegmentInfoFromVerifyVideo,
+      )}`,
+    );
+
+    const firstFound = videoSegmentsInfoFromDB.find(
+      (i: any) => i.videoHash.length > 0,
+    );
+    let defaultPhash = firstFound.videoHash;
+    console.log('defaultPhash: ' + defaultPhash);
+    // Merge function
+    const mergedFinalArray = videoSegmentsInfoFromDB.map((item1: any) => {
+      const match = videoSegmentInfoFromVerifyVideo.find(
+        item2 => item2.segmentNo === item1.segmentNo,
+      );
+
+      if (match) {
+        return {...item1, verifyPhash: match.verifyPhash}; // Merge matching items
+      } else {
+        return {...item1, verifyPhash: defaultPhash}; // Add default phash if no match
+      }
+    });
+
+    console.log('mergedFinalArray: ' + JSON.stringify(mergedFinalArray));
+
+    const dbHashSegments = mergedFinalArray.map((item: any) => item.videoHash);
+    const generatedHashes = mergedFinalArray.map(
+      (item: any) => item.verifyPhash,
+    );
+
+    if (dbHashSegments.length === generatedHashes.length) {
+      const averageDistance = percentageMatch(dbHashSegments, generatedHashes);
+      setVideoRecordFoundInfo(videoInfoFromDB);
+      Alert.alert(averageDistance + ' % Match');
+    } else {
+      Alert.alert('No records found!');
+    }
+    setIsLoaderActive(null);
   }
 
   return (

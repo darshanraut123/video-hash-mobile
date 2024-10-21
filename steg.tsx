@@ -68,7 +68,7 @@ const App = () => {
   };
 
   const saveImageToFile = async (uri: string) => {
-    const destPath = `${RNFS.PicturesDirectoryPath}/darshan_${Date.now()}.png`;
+    const destPath = `${RNFS.CachesDirectoryPath}/darshan_${Date.now()}.png`;
     await RNFS.copyFile(uri, destPath);
     console.log('Image saved to:', destPath);
   };

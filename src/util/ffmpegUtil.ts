@@ -20,7 +20,7 @@ export async function getVideoDuration(uri: string) {
 
 export const extractSegmentFramesForPHash = async (path: any) => {
   try {
-    let files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
+    let files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
     let frameFiles = files.filter(file => {
       return file.name.includes('frames') && file.isFile();
     });
@@ -31,12 +31,12 @@ export const extractSegmentFramesForPHash = async (path: any) => {
     }
 
     const command = `-y -i ${path} -vf "select='not(mod(n\, 150))'" -vsync vfr ${
-      RNFS.PicturesDirectoryPath
+      RNFS.CachesDirectoryPath
     }/${Date.now()}finalframes%d.png`;
 
     const session = await FFmpegKit.execute(command);
     console.log('session' + session);
-    files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
+    files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
     frameFiles = files.filter(file => {
       return file.name.includes('finalframes') && file.isFile();
     });
@@ -96,7 +96,7 @@ export const extractSegmentFramesForQrcode = async (path: any) => {
 };
 
 export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
-  const firstFramePath = `${RNFS.PicturesDirectoryPath}/first_frame.png`;
+  const firstFramePath = `${RNFS.CachesDirectoryPath}/first_frame.png`;
   const command = `-y -i ${uri} -vf "select=eq(n\\,0)" -q:v 2 -frames:v 1 ${firstFramePath}`;
   await FFmpegKit.execute(command);
   const response = await RNQRGenerator.detect({
@@ -114,7 +114,7 @@ export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
 }
 
 export async function extractEveryFrameWithTimestamp(uri: string) {
-  let files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
+  let files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
   let frameFiles = files.filter(file => {
     return file.name.includes('everyframe') && file.isFile();
   });
@@ -123,13 +123,13 @@ export async function extractEveryFrameWithTimestamp(uri: string) {
   for (const file of frameFiles) {
     await RNFS.unlink(file.path);
   }
-  const output = `${RNFS.PicturesDirectoryPath}/everyframe_%0d.png`;
-  // const metadataFilePath = `${RNFS.PicturesDirectoryPath}/frames_info.txt`;
+  const output = `${RNFS.CachesDirectoryPath}/everyframe_%0d.png`;
+  // const metadataFilePath = `${RNFS.CachesDirectoryPath}/frames_info.txt`;
   const command = `-y -i ${uri} -vsync 0 -frame_pts true ${output}`;
   await FFmpegKit.execute(command);
   // -skip_frame nokey
 
-  files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
+  files = await RNFS.readDir(RNFS.CachesDirectoryPath); // Read the directory
   frameFiles = files.filter(file => {
     return file.name.includes('everyframe') && file.isFile();
   });
