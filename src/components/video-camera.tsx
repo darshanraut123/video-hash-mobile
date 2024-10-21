@@ -446,24 +446,6 @@ export default function VideoCamera({navigation}: any) {
     nistBeacon.current = await getNistBeaconAPI();
   };
 
-  // const frameProcessor = useFrameProcessor(frame => {
-  //   'worklet';
-
-  //   const frameTimestamp = frame.timestamp;
-  //   const recordingStatus = isRecordingShared.value;
-
-  //   if (lastFrameTimestamp.value === 0) {
-  //     lastFrameTimestamp.value = frameTimestamp;
-  //   }
-
-  //   const timeDiffInSeconds = (frameTimestamp - lastFrameTimestamp.value) / 1e9;
-
-  //   if (timeDiffInSeconds >= 5 && recordingStatus) {
-  //     lastFrameTimestamp.value = frameTimestamp;
-  //     setQrCodes(); // Call the JavaScript function
-  //   }
-  // }, []);
-
   const frameProcessor = useFrameProcessor(frame => {
     'worklet';
 

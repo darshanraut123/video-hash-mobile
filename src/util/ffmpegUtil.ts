@@ -20,7 +20,6 @@ export async function getVideoDuration(uri: string) {
 
 export const extractSegmentFramesForPHash = async (path: any) => {
   try {
-    // path = '/storage/emulated/0/Pictures/video_1729373878136.mov';
     let files = await RNFS.readDir(RNFS.PicturesDirectoryPath); // Read the directory
     let frameFiles = files.filter(file => {
       return file.name.includes('frames') && file.isFile();

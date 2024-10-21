@@ -15,7 +15,7 @@ import {
   extractSegmentFramesForQrcode,
   getVideoDuration,
 } from '../util/ffmpegUtil';
-import {percentageMatch} from '../util/common';
+import {hammingDistance, percentageMatch} from '../util/common';
 
 export default function Verify({navigation}: any) {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
@@ -226,6 +226,8 @@ export default function Verify({navigation}: any) {
     console.log('first ' + sortedFilePaths[0]);
     console.log(`last ${sortedFilePaths[sortedFilePaths.length - 1]}`);
     console.log('length ' + sortedFilePaths.length);
+    let flag: boolean = true;
+    const percentage4Average: number[] = [];
     for (let index = 0; index < sortedFilePaths.length; index++) {
       const response = await RNQRGenerator.detect({
         uri: sortedFilePaths[index],
@@ -236,13 +238,6 @@ export default function Verify({navigation}: any) {
         const qrcodeData: any = JSON.parse(values[0]);
         if (!currentSegmentInfo) {
           console.log('Found first segment ID of trimmed part');
-          currentSegmentInfo = qrcodeData;
-          continue;
-        } else if (currentSegmentInfo.segmentId === qrcodeData.segmentId) {
-          // console.log('Same segment id found, waiting for QR code to change');
-          continue;
-        } else {
-          console.log('QR code change found');
           currentSegmentInfo = qrcodeData;
           let timestampOfChange: string = sortedFilePaths[index]
             .split('_')[1]
@@ -258,11 +253,43 @@ export default function Verify({navigation}: any) {
               ' for frame: ' +
               sortedFilePaths[index],
           );
+          continue;
+        } else if (currentSegmentInfo.segmentId === qrcodeData.segmentId) {
+          // console.log('Same segment id found, waiting for QR code to change');
+          continue;
+        } else {
+          console.log('QR code change found');
+          currentSegmentInfo = qrcodeData;
+          let timestampOfChange: string = sortedFilePaths[index]
+            .split('_')[1]
+            .split('.')[0];
+          const timeStampseconds: number = +timestampOfChange / 30;
+          const generatedHashes: any = await generatePhashFromFrames([
+            sortedFilePaths[index],
+          ]);
+          const onlyRequiredPhash: string = generatedHashes[0];
+          console.log(
+            'Extracted Phash ' +
+              onlyRequiredPhash +
+              ' for frame: ' +
+              sortedFilePaths[index],
+          );
+          if (flag) {
+            console.log(`timeStampseconds: ${timeStampseconds}`);
+            console.log(`Trimmed video duration : ${5 - timeStampseconds}`);
+            percentage4Average.push(timeStampseconds * 20);
+            flag = false;
+            continue;
+          }
+          percentage4Average.push(
+            hammingDistance(videoSegmentHashesFromDB[index], onlyRequiredPhash),
+          );
         }
       } else {
         console.log('failed to detect QR code');
       }
     }
+    console.log(`FINAL ARR ===> ${JSON.stringify(percentage4Average)}`);
   }
 
   return (
@@ -273,7 +300,10 @@ export default function Verify({navigation}: any) {
           title="Please tap to select a video file from library"
           onPress={verifyVideo}
         />
-        <Button title="convert variant" onPress={extractSegmentFramesForPHash} />
+        <Button
+          title="convert variant"
+          onPress={extractSegmentFramesForPHash}
+        />
         <Button
           title="Sign In Page"
           onPress={() =>
