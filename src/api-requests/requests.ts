@@ -34,7 +34,7 @@ export const saveVideoHash = async (body: any) => {
   }
 };
 
-export const findVideoHash = async (videoId: string) => {
+export const findVideoInfo = async (videoId: string) => {
   try {
     console.log(SAVE_FIND_HASH_URL + '?videoId=' + videoId);
     let response = await axios.get(SAVE_FIND_HASH_URL + '?videoId=' + videoId);

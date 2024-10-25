@@ -1,7 +1,7 @@
 import {FFmpegKit, FFprobeKit} from 'ffmpeg-kit-react-native';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
-import {findVideoHash} from '../api-requests/requests';
+import {findVideoInfo} from '../api-requests/requests';
 
 export async function getVideoDuration(uri: string) {
   try {
@@ -104,11 +104,14 @@ export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
   });
   let {values}: any = response;
   console.log('values ' + values);
-  if (values) {
+  if (values.length) {
     values = JSON.parse(values);
     console.log('videoId ' + values.videoId);
-    return await findVideoHash(values?.videoId);
+    const videoInfo = await findVideoInfo(values?.videoId);
+    console.log('Returning info ' + videoInfo);
+    return videoInfo;
   } else {
+    console.log('Returning null');
     return null;
   }
 }
