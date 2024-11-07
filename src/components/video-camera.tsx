@@ -1,5 +1,5 @@
 import React, {useEffect, useState, useRef} from 'react';
-import {Platform, PermissionsAndroid, Alert} from 'react-native';
+import {Platform, PermissionsAndroid} from 'react-native';
 import uuid from 'react-native-uuid';
 import {StyleSheet, View, Text, TouchableOpacity, Button} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -29,7 +29,6 @@ import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
 import {extractSegmentFramesForPHash} from '../util/ffmpegUtil';
 import {useAuth} from './authProvider';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -481,11 +480,6 @@ export default function VideoCamera({navigation}: any) {
     return <Text>Loading Camera...</Text>;
   }
 
-  async function check() {
-    const token = await AsyncStorage.getItem('token');
-    console.log('token: ' + JSON.stringify(token));
-  }
-
   return (
     <View style={styles.container}>
       <Canvas
@@ -510,7 +504,6 @@ export default function VideoCamera({navigation}: any) {
 
           <Button title="Go to verify" onPress={gotoVerify} />
           <Button title="Log out" onPress={logout} />
-          <Button title="Check" onPress={check} />
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
             <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
