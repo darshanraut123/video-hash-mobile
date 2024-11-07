@@ -18,6 +18,7 @@ import {
   // calculateSegmentOverlap,
   percentageMatch,
 } from '../util/common';
+import {useAuth} from './authProvider';
 
 export default function Verify() {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
@@ -25,6 +26,7 @@ export default function Verify() {
   const [isLoaderActive, setIsLoaderActive] = React.useState<any>(null);
   const canvasRef = React.useRef<any>();
   let currentSegmentInfo: any = null;
+  const {logout} = useAuth(); // Get login status from AuthContext
 
   async function verifyVideo() {
     try {
@@ -341,6 +343,8 @@ export default function Verify() {
     <>
       {isLoaderActive && <Loader loaderText={isLoaderActive} />}
       <View>
+        <Button title="Log out" onPress={logout} />
+
         <Button
           title="Please tap to select a video file from library"
           onPress={verifyVideo}

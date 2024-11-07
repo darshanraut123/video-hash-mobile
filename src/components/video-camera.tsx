@@ -28,7 +28,6 @@ import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
 import {extractSegmentFramesForPHash} from '../util/ffmpegUtil';
-import {useAuth} from './authProvider';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -51,7 +50,6 @@ export default function VideoCamera({navigation}: any) {
   const lastFrameTimestamp = useSharedValue(0);
   const segmentNo = useSharedValue(0);
   const videoId = useSharedValue<any>(null);
-  const {logout} = useAuth(); // Get login status from AuthContext
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
@@ -503,7 +501,6 @@ export default function VideoCamera({navigation}: any) {
           />
 
           <Button title="Go to verify" onPress={gotoVerify} />
-          <Button title="Log out" onPress={logout} />
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
             <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
