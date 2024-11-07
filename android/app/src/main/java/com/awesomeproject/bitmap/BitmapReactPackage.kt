@@ -1,4 +1,4 @@
-package com.awesomeproject.bitmap
+package com.videohash.bitmap
 
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule

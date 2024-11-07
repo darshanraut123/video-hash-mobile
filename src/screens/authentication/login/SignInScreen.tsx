@@ -1,4 +1,5 @@
-import { NavigationProp } from '@react-navigation/native';
+/* eslint-disable react-native/no-inline-styles */
+import {NavigationProp} from '@react-navigation/native';
 import React from 'react';
 import {
   View,
@@ -7,88 +8,114 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Dimensions,
+  ScrollView,
+  Alert,
 } from 'react-native';
-import {CheckBox, Button, Icon} from 'react-native-elements';
-import { Paths } from '../../../navigation/path';
-
-const {width} = Dimensions.get('window');
-
+import {Button, Icon} from 'react-native-elements';
+import {Paths} from '../../../navigation/path';
+import {useAuth} from '../../../components/authProvider';
+import Loader from '../../../components/loader';
+import OauthSignIn from '../../../components/oauthSignIn';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+// import CheckBox from 'react-native-check-box';
 interface SignInScreenProps {
-  navigation: NavigationProp<any>;  // Add explicit type for navigation
+  navigation: NavigationProp<any>; // Add explicit type for navigation
 }
 
-const SignInScreen = ({ navigation }: SignInScreenProps) => {
-  return (
-    <View style={styles.container}>
-      {/* Close Button */}
-      <TouchableOpacity style={styles.closeButton}>
-        <Icon name="close" size={24} color="#000" />
-      </TouchableOpacity>
+const SignInScreen = ({navigation}: SignInScreenProps) => {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const {login, isLoading} = useAuth(); // Get login status from AuthContext
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Image
-          style={styles.logo}
-          source={require('../../../../android/assets/images/logo.png')}
-        />
-        <Text style={styles.title}>REALITY REGISTRY</Text>
-        <Text style={styles.subtitle}>Sign in to your account</Text>
-      </View>
+  function onLogibBtnClick() {
+    if (!email || !password) {
+      Alert.alert('Provide email and password');
+      return;
+    }
+    login({password, email, loginType: 'email'});
+  }
 
-      {/* Form */}
-      <View style={styles.form}>
-        <Text style={styles.label}>Your email</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="name.name@email.com"
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        <Text style={styles.label}>Password</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          secureTextEntry
-        />
-        <View style={styles.options}>
-          <CheckBox
-            title="Remember me"
-            checked={false}
-            containerStyle={styles.checkbox}
+  async function check() {
+    const token = await AsyncStorage.getItem('token');
+    console.log('token: ' + JSON.stringify(token));
+  }
+
+  return isLoading ? (
+    <Loader loaderText={'Logging in...'} />
+  ) : (
+    <ScrollView>
+      <View style={styles.container}>
+        <Button title="Check" onPress={check} />
+
+        {/* Close Button */}
+        <TouchableOpacity style={styles.closeButton}>
+          <Icon name="close" size={24} color="#000" />
+        </TouchableOpacity>
+
+        {/* Header */}
+        <View style={styles.header}>
+          <Image
+            style={styles.logo}
+            source={require('../../../../android/assets/images/logo.png')}
           />
-          <TouchableOpacity>
-            <Text style={styles.forgotPassword}>Forgot password?</Text>
+          <Text style={styles.title}>REALITY REGISTRY</Text>
+          <Text style={styles.subtitle}>Sign in to your account</Text>
+        </View>
+
+        {/* Form */}
+        <View style={styles.form}>
+          <Text style={styles.label}>Your email</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter email..."
+            keyboardType="email-address"
+            autoCapitalize="none"
+            onChangeText={setEmail}
+          />
+          <Text style={styles.label}>Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter password..."
+            secureTextEntry
+            onChangeText={setPassword}
+          />
+          {/* <View style={styles.options}>
+            <CheckBox
+              style={styles.checkbox}
+              onClick={() => {
+                console.log();
+              }}
+              isChecked={true}
+              rightText={'Remember me'}
+            />
+            <TouchableOpacity>
+              <Text style={styles.forgotPassword}>Forgot password?</Text>
+            </TouchableOpacity>
+          </View> */}
+
+          {/* Sign In Button */}
+          <Button
+            title="Sign In"
+            buttonStyle={styles.signInButton}
+            onPress={onLogibBtnClick}
+          />
+          <TouchableOpacity
+            style={styles.signUp}
+            onPress={() => {
+              navigation.navigate(Paths.Auth, {screen: Paths.SignUp});
+            }}>
+            <Text>
+              Don't have an account?{'  '}
+              <Text style={styles.signUpText}>Sign up</Text>
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Sign In Button */}
-        <Button title="Sign In" buttonStyle={styles.signInButton} />
-        <TouchableOpacity style={styles.signUp} onPress={() => {
-          navigation.navigate(Paths.Auth, { screen: Paths.SignUp });
-        }}>
-          <Text>
-            Don't have an account?{' '}
-            <Text style={styles.signUpText}>Sign up</Text>
-          </Text>
-        </TouchableOpacity>
+        {/* Divider */}
+        <View style={styles.divider} />
+        <OauthSignIn />
       </View>
-
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Face ID Button */}
-      <View style={{ alignItems: 'center' }}>
-        <Image
-          style={styles.face_id_logo}
-          source={require('../../../../android/assets/images/face-id.png')}
-        />
-      </View>
-      <TouchableOpacity style={styles.faceIDButton}>
-        {/* <Icon name="face" size={32} color="#000" /> */}
-        <Text style={styles.faceIDText}>Use Face ID</Text>
-      </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 };
 
@@ -194,5 +221,3 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 });
-
-

@@ -1,4 +1,4 @@
-package com.awesomeproject.bitmap
+package com.videohash.bitmap
 
 import android.content.Intent
 import android.graphics.Bitmap

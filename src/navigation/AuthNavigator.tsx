@@ -1,17 +1,17 @@
 import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 
-import { Paths } from './path';
-import SignInScreen from '../screens/authentication/login/SignInScreen';
-import SignUpScreen from '../screens/authentication/signup/SignUpScreen';
-
-
+import {Paths} from './path';
+import SignInScreen from '../screens/authentication/login/signInScreen';
+import SignUpScreen from '../screens/authentication/signup/signUpScreen';
 
 const Stack = createNativeStackNavigator();
 
 const AuthStack = () => {
   return (
-    <Stack.Navigator initialRouteName={'Auth'} screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      initialRouteName={'Auth'}
+      screenOptions={{headerShown: false}}>
       <Stack.Screen name={Paths.SignIn} component={SignInScreen} />
       <Stack.Screen name={Paths.SignUp} component={SignUpScreen} />
     </Stack.Navigator>

@@ -1,37 +1,77 @@
-import { NavigationProp } from '@react-navigation/native';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, Image } from 'react-native';
-import { Paths } from '../../../navigation/path';
+import {NavigationProp} from '@react-navigation/native';
+import React, {useState} from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  Image,
+} from 'react-native';
+import {Paths} from '../../../navigation/path';
 import CheckBoxIcon from 'react-native-elements/dist/checkbox/CheckBoxIcon';
-// import { CheckBox } from 'react-native-elements';
+import {signUpAPI} from '../../../service/authrequests';
+import Loader from '../../../components/loader';
 
 interface SignUpScreenProps {
-  navigation: NavigationProp<any>;  // Add explicit type for navigation
+  navigation: NavigationProp<any>; // Add explicit type for navigation
 }
 
-export default function SignUpScreen({ navigation }: SignUpScreenProps) {
+export default function SignUpScreen({navigation}: SignUpScreenProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [agree, setAgree] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  return (
+  async function signUp() {
+    setIsLoading(true);
+    if (!agree || !name || !email || !password || !confirmPassword) {
+      Alert.alert('Provide correct data!');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response: any = await signUpAPI({
+        email,
+        password,
+        name,
+        loginType: 'email',
+      });
+      if (response && response.status === 200) {
+        Alert.alert('Sign Up Successful! Please login.');
+        navigation.navigate(Paths.SignIn);
+      } else {
+        Alert.alert('Sign Up Failed! Try again.');
+      }
+    } catch (e) {
+      console.log(e);
+      Alert.alert('Error! Try again.');
+    }
+    setIsLoading(false);
+  }
+
+  return isLoading ? (
+    <Loader loaderText={'Signing you up...'} />
+  ) : (
     <View style={styles.container}>
       <Text style={styles.logo}>REALITY REGISTRY</Text>
-      <View style={{width: '100%', alignItems: 'center'}}>
+      <View style={styles.imgCon}>
         <Image
           style={styles.rr_logo}
           source={require('../../../../android/assets/images/logo.png')}
         />
-        </View>
+      </View>
       <Text style={styles.subTitle}>Create account</Text>
 
       <TextInput
         style={styles.input}
         placeholder="Full Name"
         value={name}
-        onChangeText={(text) => setName(text)}
+        onChangeText={text => setName(text)}
       />
 
       <TextInput
@@ -39,7 +79,7 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
         placeholder="Your email"
         keyboardType="email-address"
         value={email}
-        onChangeText={(text) => setEmail(text)}
+        onChangeText={text => setEmail(text)}
       />
 
       <TextInput
@@ -47,7 +87,7 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
         placeholder="Password"
         secureTextEntry={true}
         value={password}
-        onChangeText={(text) => setPassword(text)}
+        onChangeText={text => setPassword(text)}
       />
 
       <TextInput
@@ -55,20 +95,18 @@ export default function SignUpScreen({ navigation }: SignUpScreenProps) {
         placeholder="Confirm Password"
         secureTextEntry={true}
         value={confirmPassword}
-        onChangeText={(text) => setConfirmPassword(text)}
+        onChangeText={text => setConfirmPassword(text)}
       />
 
       <View style={styles.agreement}>
-        <CheckBoxIcon
-          checked={agree}
-          // value={agree}
-          onIconPress={() => setAgree(!agree)}
-          // onValueChange={() => setAgree(!agree)}
-        />
-        <Text style={styles.agreementText}>I agree to the <Text style={styles.link}>Terms of Service</Text> and <Text style={styles.link}>Privacy Policy</Text>.</Text>
+        <CheckBoxIcon checked={agree} onIconPress={() => setAgree(!agree)} />
+        <Text style={styles.agreementText}>
+          I agree to the <Text style={styles.link}>Terms of Service</Text> and{' '}
+          <Text style={styles.link}>Privacy Policy</Text>.
+        </Text>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={() => Alert.alert('Sign Up Successful!')}>
+      <TouchableOpacity style={styles.button} onPress={signUp}>
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
@@ -147,4 +185,5 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     marginBottom: 10,
   },
+  imgCon: {width: '100%', alignItems: 'center'},
 });

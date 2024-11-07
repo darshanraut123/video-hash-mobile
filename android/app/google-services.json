@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "589493241267",
+    "project_id": "video-hash-1fb7d",
+    "storage_bucket": "video-hash-1fb7d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589493241267:android:91ebd92b73fb24c7a2b7c6",
+        "android_client_info": {
+          "package_name": "com.videohash"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "589493241267-bih891gpkv4t2ns7fpah7c7p7e9cckpt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.videohash",
+            "certificate_hash": "3f60d58adaea2616524157f25675427a511351fd"
+          }
+        },
+        {
+          "client_id": "589493241267-q409344pjvjneo3dlqsn9gd0uapm4ajn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.videohash",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "589493241267-sa19b7j64ku4qls3e619l82nj4h1kr66.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAwqaAIoP104p6C9dPdYz_-iJopLm6xd7o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "589493241267-5iprhnet3hakcdb51gus08pfv9815jc0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

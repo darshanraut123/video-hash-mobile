@@ -17,7 +17,7 @@ import {
   getLocalBeaconAPI,
   getNistBeaconAPI,
   saveVideoHash,
-} from '../api-requests/requests';
+} from '../service/hashrequests';
 import {Worklets, useSharedValue} from 'react-native-worklets-core';
 import pHash from '../util/phash';
 import Svg, {Path} from 'react-native-svg';
@@ -28,6 +28,8 @@ import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
 import {extractSegmentFramesForPHash} from '../util/ffmpegUtil';
+import {useAuth} from './authProvider';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -50,6 +52,7 @@ export default function VideoCamera({navigation}: any) {
   const lastFrameTimestamp = useSharedValue(0);
   const segmentNo = useSharedValue(0);
   const videoId = useSharedValue<any>(null);
+  const {logout} = useAuth(); // Get login status from AuthContext
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
@@ -478,6 +481,11 @@ export default function VideoCamera({navigation}: any) {
     return <Text>Loading Camera...</Text>;
   }
 
+  async function check() {
+    const token = await AsyncStorage.getItem('token');
+    console.log('token: ' + JSON.stringify(token));
+  }
+
   return (
     <View style={styles.container}>
       <Canvas
@@ -501,6 +509,8 @@ export default function VideoCamera({navigation}: any) {
           />
 
           <Button title="Go to verify" onPress={gotoVerify} />
+          <Button title="Log out" onPress={logout} />
+          <Button title="Check" onPress={check} />
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
             <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />

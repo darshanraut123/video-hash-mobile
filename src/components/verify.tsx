@@ -3,7 +3,7 @@ import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
-import {findVideoHash} from '../api-requests/requests';
+import {findVideoInfo} from '../service/hashrequests';
 import Loader from './loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../util/phash';
@@ -15,7 +15,7 @@ import {
   extractSegmentFramesForQrcode,
   getVideoDuration,
 } from '../util/ffmpegUtil';
-import {percentageMatch} from '../util/common';
+import {calculateSegmentOverlap, percentageMatch} from '../util/common';
 
 export default function Verify({navigation}: any) {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
@@ -36,8 +36,13 @@ export default function Verify({navigation}: any) {
         Alert.alert('No Records found');
         return;
       }
+      console.log(
+        'videoInfoFromDB: ' + JSON.stringify(videoInfoFromDB.document),
+      );
       const verifyVideoDuration = await getVideoDuration(uri);
-      const dbVideoDuration = parseFloat(videoInfoFromDB.duration).toFixed(1);
+      const dbVideoDuration = parseFloat(
+        videoInfoFromDB.document.duration,
+      ).toFixed(1);
       console.log(
         `verifyVideoDuration: ${verifyVideoDuration} | dbVideoDuration: ${dbVideoDuration}`,
       );
@@ -187,7 +192,7 @@ export default function Verify({navigation}: any) {
       Alert.alert('No Records found');
       return;
     }
-    const response = await findVideoHash(videoId);
+    const response = await findVideoInfo(videoId);
     if (response.document) {
       setVideoRecordFoundInfo(response.document);
       const dbHashSegments: any[] = response.document.segments.map(
@@ -215,7 +220,7 @@ export default function Verify({navigation}: any) {
   async function verifyTrimmedVideo({uri, videoInfoFromDB}: any) {
     console.log('duration not same ie video is trimmed ' + uri);
     const videoSegmentsInfoFromDB: any = videoInfoFromDB.segments;
-    const videoSegmentInfoFromVerifyVideo: any[] = [];
+    let videoSegmentInfoFromVerifyVideo: any[] = [];
     const sortedFilePaths: string[] = await extractEveryFrameWithTimestamp(uri);
     console.log('first ' + sortedFilePaths[0]);
     console.log(`last ${sortedFilePaths[sortedFilePaths.length - 1]}`);
@@ -227,16 +232,16 @@ export default function Verify({navigation}: any) {
         uri: sortedFilePaths[index],
       });
       const {values}: any = response; // Array of detected QR code values. Empty if nothing found.
-
+      let timestampOfChange: string = sortedFilePaths[index]
+        .split('_')[1]
+        .split('.')[0];
+      const timeStampseconds: number = +timestampOfChange / 30;
       if (values.length) {
         const qrcodeData: any = JSON.parse(values[0]);
         if (!currentSegmentInfo) {
           console.log('Found first segment ID of trimmed part');
           currentSegmentInfo = qrcodeData;
-          let timestampOfChange: string = sortedFilePaths[index]
-            .split('_')[1]
-            .split('.')[0];
-          console.log(+timestampOfChange / 30 + ' seconds');
+
           const generatedHashes: any = await generatePhashFromFrames([
             sortedFilePaths[index],
           ]);
@@ -248,6 +253,7 @@ export default function Verify({navigation}: any) {
               sortedFilePaths[index],
           );
           currentSegmentInfo.verifyPhash = onlyRequiredPhash;
+          currentSegmentInfo.timeStampseconds = timeStampseconds;
           videoSegmentInfoFromVerifyVideo.push(currentSegmentInfo);
           continue;
         } else if (currentSegmentInfo.segmentId === qrcodeData.segmentId) {
@@ -256,10 +262,6 @@ export default function Verify({navigation}: any) {
         } else {
           console.log('QR code change found');
           currentSegmentInfo = qrcodeData;
-          let timestampOfChange: string = sortedFilePaths[index]
-            .split('_')[1]
-            .split('.')[0];
-          const timeStampseconds: number = +timestampOfChange / 30;
           const generatedHashes: any = await generatePhashFromFrames([
             sortedFilePaths[index],
           ]);
@@ -273,10 +275,10 @@ export default function Verify({navigation}: any) {
           if (flag) {
             // First change from one hash to another hash found
             console.log(`timeStampseconds: ${timeStampseconds}`);
-            console.log(`Trimmed video duration : ${5 - timeStampseconds}`);
             flag = false;
           }
           currentSegmentInfo.verifyPhash = onlyRequiredPhash;
+          currentSegmentInfo.timeStampseconds = timeStampseconds;
           videoSegmentInfoFromVerifyVideo.push(currentSegmentInfo);
         }
       } else {
@@ -318,13 +320,18 @@ export default function Verify({navigation}: any) {
       (item: any) => item.verifyPhash,
     );
 
-    if (dbHashSegments.length === generatedHashes.length) {
-      const averageDistance = percentageMatch(dbHashSegments, generatedHashes);
-      setVideoRecordFoundInfo(videoInfoFromDB);
-      Alert.alert(averageDistance + ' % Match');
-    } else {
-      Alert.alert('No records found!');
-    }
+    const res = calculateSegmentOverlap(
+      videoSegmentsInfoFromDB,
+      videoSegmentInfoFromVerifyVideo,
+    );
+    console.log(JSON.stringify(res));
+    // if (dbHashSegments.length === generatedHashes.length) {
+    //   const averageDistance = percentageMatch(dbHashSegments, generatedHashes);
+    //   setVideoRecordFoundInfo(videoInfoFromDB);
+    //   Alert.alert(averageDistance + ' % Match');
+    // } else {
+    //   Alert.alert('No records found!');
+    // }
     setIsLoaderActive(null);
   }
 
