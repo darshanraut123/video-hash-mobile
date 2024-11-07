@@ -69,7 +69,7 @@ class BitmapModule(private val reactContext: ReactApplicationContext) : ReactCon
                 bitmap.setPixel(x, y, color)
             }
 
-            val myDir = File(reactContext.getExternalFilesDir(null), "awesomeproject")
+            val myDir = File(reactContext.getExternalFilesDir(null), "videohash")
 
 
             if (!myDir.exists()) {
