@@ -35,18 +35,11 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
     login({password, email, loginType: 'email'});
   }
 
-  async function check() {
-    const token = await AsyncStorage.getItem('token');
-    console.log('token: ' + JSON.stringify(token));
-  }
-
   return isLoading ? (
     <Loader loaderText={'Logging in...'} />
   ) : (
     <ScrollView>
       <View style={styles.container}>
-        <Button title="Check" onPress={check} />
-
         {/* Close Button */}
         <TouchableOpacity style={styles.closeButton}>
           <Icon name="close" size={24} color="#000" />

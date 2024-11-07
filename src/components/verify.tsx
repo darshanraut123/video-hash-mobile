@@ -7,7 +7,6 @@ import {findVideoInfo} from '../service/hashrequests';
 import Loader from './loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../util/phash';
-import {Paths} from '../navigation/path';
 import {
   extractEveryFrameWithTimestamp,
   extractFirstFrameAndGetVideoInfoFromDB,
@@ -15,9 +14,12 @@ import {
   extractSegmentFramesForQrcode,
   getVideoDuration,
 } from '../util/ffmpegUtil';
-import {calculateSegmentOverlap, percentageMatch} from '../util/common';
+import {
+  // calculateSegmentOverlap,
+  percentageMatch,
+} from '../util/common';
 
-export default function Verify({navigation}: any) {
+export default function Verify() {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
     React.useState<any>(null);
   const [isLoaderActive, setIsLoaderActive] = React.useState<any>(null);
@@ -320,18 +322,18 @@ export default function Verify({navigation}: any) {
       (item: any) => item.verifyPhash,
     );
 
-    const res = calculateSegmentOverlap(
-      videoSegmentsInfoFromDB,
-      videoSegmentInfoFromVerifyVideo,
-    );
-    console.log(JSON.stringify(res));
-    // if (dbHashSegments.length === generatedHashes.length) {
-    //   const averageDistance = percentageMatch(dbHashSegments, generatedHashes);
-    //   setVideoRecordFoundInfo(videoInfoFromDB);
-    //   Alert.alert(averageDistance + ' % Match');
-    // } else {
-    //   Alert.alert('No records found!');
-    // }
+    // const res = calculateSegmentOverlap(
+    //   videoSegmentsInfoFromDB,
+    //   videoSegmentInfoFromVerifyVideo,
+    // );
+    // console.log(JSON.stringify(res));
+    if (dbHashSegments.length === generatedHashes.length) {
+      const averageDistance = percentageMatch(dbHashSegments, generatedHashes);
+      setVideoRecordFoundInfo(videoInfoFromDB);
+      Alert.alert(averageDistance + ' % Match');
+    } else {
+      Alert.alert('No records found!');
+    }
     setIsLoaderActive(null);
   }
 
@@ -342,22 +344,6 @@ export default function Verify({navigation}: any) {
         <Button
           title="Please tap to select a video file from library"
           onPress={verifyVideo}
-        />
-        <Button
-          title="convert variant"
-          onPress={extractSegmentFramesForPHash}
-        />
-        <Button
-          title="Sign In Page"
-          onPress={() =>
-            navigation.navigate(Paths.Auth, {screen: Paths.SignIn})
-          }
-        />
-        <Button
-          title="Sign Up Page"
-          onPress={() =>
-            navigation.navigate(Paths.Auth, {screen: Paths.SignUp})
-          }
         />
         <ScrollView>
           <Canvas
