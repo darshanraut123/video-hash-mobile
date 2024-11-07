@@ -4,6 +4,7 @@ import {loginAPI} from '../service/authrequests';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert} from 'react-native';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import {LoginManager} from 'react-native-fbsdk-next';
 
 // Define the context interface
 interface AuthContextProps {
@@ -49,6 +50,8 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({children}) => {
     setIsLoggedIn(false);
     await GoogleSignin.signOut();
     await AsyncStorage.removeItem('token');
+    await LoginManager.logOut(); // Logs out the user from Facebook
+    console.log('User logged out successfully');
   };
 
   React.useEffect(() => {

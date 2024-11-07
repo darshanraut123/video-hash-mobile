@@ -1,4 +1,4 @@
-import {Alert, View} from 'react-native';
+import {Alert, Button, View} from 'react-native';
 import React from 'react';
 import {
   GoogleSignin,
@@ -10,6 +10,8 @@ import {
 import {signUpAPI} from '../service/authrequests';
 import {useAuth} from './authProvider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import auth from '@react-native-firebase/auth';
+import {LoginManager, AccessToken} from 'react-native-fbsdk-next';
 
 export default function OauthSignIn() {
   // Somewhere in your code
@@ -31,7 +33,7 @@ export default function OauthSignIn() {
             loginType: 'google',
           });
           if (apiresponse && apiresponse.status === 200) {
-            console.log(JSON.stringify(response.data));
+            console.log(JSON.stringify(apiresponse.data));
             const token =
               apiresponse.data.user.googleToken || apiresponse.data.user.token;
             await AsyncStorage.setItem('token', token);
@@ -74,12 +76,71 @@ export default function OauthSignIn() {
     setLoadingStatus(false);
   };
 
+  async function onFacebookButtonPress() {
+    try {
+      // Attempt login with permissions
+      const result = await LoginManager.logInWithPermissions([
+        'public_profile',
+        'email',
+      ]);
+
+      if (result.isCancelled) {
+        throw 'User cancelled the login process';
+      }
+
+      // Once signed in, get the users AccessToken
+      const data = await AccessToken.getCurrentAccessToken();
+
+      if (!data) {
+        throw 'Something went wrong obtaining access token';
+      }
+      console.log('data: ' + JSON.stringify(data));
+
+      const facebookCredential = auth.FacebookAuthProvider.credential(
+        data.accessToken,
+      );
+      setLoadingStatus(true);
+
+      // Sign-in the user with the credential
+      const moreInfoFb = await auth().signInWithCredential(facebookCredential);
+      console.log('moreInfoFb: ' + JSON.stringify(moreInfoFb));
+      const apiresponse: any = await signUpAPI({
+        googleToken: data.accessToken,
+        email: moreInfoFb.user.email,
+        name: moreInfoFb.user.displayName,
+        loginType: 'google',
+      });
+      if (apiresponse && apiresponse.status === 200) {
+        console.log(JSON.stringify(apiresponse.data));
+        const token =
+          apiresponse.data.user.googleToken || apiresponse.data.user.token;
+        await AsyncStorage.setItem('token', token);
+        setLoginStatus(true);
+        console.log('Logged in');
+      } else {
+        Alert.alert('Sign Up Failed! Try again.');
+      }
+    } catch (e) {
+      console.log(e);
+      Alert.alert('Error! Try again.');
+    }
+    setLoadingStatus(false);
+  }
+
   return (
     <View>
       <GoogleSigninButton
         color="light"
         onPress={onGoogleButtonPress}
         style={{width: '100%'}}
+      />
+      <Button
+        title="Facebook Sign-In"
+        onPress={() =>
+          onFacebookButtonPress().then(() =>
+            console.log('Signed in with Facebook!'),
+          )
+        }
       />
     </View>
   );
