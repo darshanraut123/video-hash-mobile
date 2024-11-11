@@ -1,8 +1,8 @@
 import React from 'react';
 import {NavigationContainer} from '@react-navigation/native';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
-import AuthStack from './authNavigator';
-import HomeStack from './homeNavigator';
+import AuthStack from './AuthNavigator';
+import HomeStack from './HomeNavigator';
 import {useAuth} from '../components/authProvider';
 
 const Stack = createNativeStackNavigator();

@@ -1,6 +1,6 @@
 import React from 'react';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import AppNavigator from './src/navigation/rootNavigator';
+import AppNavigator from './src/navigation/RootNavigator';
 import {AuthProvider} from './src/components/authProvider';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 
