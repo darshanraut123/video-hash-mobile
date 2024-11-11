@@ -5,6 +5,7 @@ import {NavigationProp} from '@react-navigation/native';
 import BlankHeader from '../../components/BlankHeader';
 import VideoList from './VideoList';
 import Video from 'react-native-video';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface VideoLibraryProps {
   navigation: NavigationProp<any>;
@@ -40,17 +41,22 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
         const files: ReadDirItem[] = await RNFS.readDir(
           RNFS.PicturesDirectoryPath,
         );
+        const tasks: any = await AsyncStorage.getItem('TASK_QUEUE');
+        const parsedTasks: any = tasks ? JSON.parse(tasks) : [];
         const videoFiles = files.filter(
           file =>
             file.isFile() &&
             (file.name.endsWith('.mov') || file.name.endsWith('.mp4')),
         );
-
-        // Create an array of video objects with a sample status for demonstration
-        const videoPaths = videoFiles.map(file => ({
-          path: file.path,
-          status: Math.random() > 0.5 ? 'inProcess' : 'isCompleted', // Randomly set status for example
-        }));
+        const videoPaths: any = videoFiles.map((item: any) => {
+          const match = parsedTasks.find(
+            (obj: any) =>
+              obj.path === item.path || obj.path === item.statusPath,
+          );
+          console.log({...item, status: match.status});
+          return {...item, status: match.status};
+        });
+        console.log('videoPaths: ' + JSON.stringify(videoPaths));
         setVideos(videoPaths);
       } catch (error) {
         console.log('Error loading videos: ', error);

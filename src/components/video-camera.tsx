@@ -1,5 +1,5 @@
 import React, {useEffect, useState, useRef} from 'react';
-import {Platform, PermissionsAndroid} from 'react-native';
+import {Platform, PermissionsAndroid, Alert} from 'react-native';
 import uuid from 'react-native-uuid';
 import {StyleSheet, View, Text, TouchableOpacity, Button} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -23,13 +23,18 @@ import pHash from '../util/phash';
 import Svg, {Path} from 'react-native-svg';
 import QrCodeComponent from './qr-code';
 import RNFS from 'react-native-fs';
-import Loader from './loader';
 import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
 import {extractSegmentFramesForPHash} from '../util/ffmpegUtil';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { Paths } from '../navigation/path';
+import {Paths} from '../navigation/path';
+import {
+  addTaskToQueue,
+  getTasksFromQueue,
+  updateTaskStatus,
+} from '../util/queue';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -52,6 +57,7 @@ export default function VideoCamera({navigation}: any) {
   const lastFrameTimestamp = useSharedValue(0);
   const segmentNo = useSharedValue(0);
   const videoId = useSharedValue<any>(null);
+  let isProcessing = false;
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
@@ -117,10 +123,12 @@ export default function VideoCamera({navigation}: any) {
     // timers maintained in the Map timer.intervals
     timer.setInterval('fbTimer', fetchBeacon, 3000);
     timer.setInterval('nistTimer', getNistBeacon, 10000);
+    timer.setInterval('queueTimer', processNextTask, 8000);
 
     return () => {
       timer.intervalExists('fbTimer') && timer.clearInterval('fbTimer');
       timer.intervalExists('nistTimer') && timer.clearInterval('nistTimer');
+      timer.intervalExists('queueTimer') && timer.clearInterval('queueTimer');
     };
   }, []);
 
@@ -247,9 +255,10 @@ export default function VideoCamera({navigation}: any) {
     watermarkPaths: string[],
   ) => {
     try {
-      const outputPath = `${
-        RNFS.PicturesDirectoryPath
-      }/video_${Date.now()}.mov`;
+      const fileName: any = inputPath.split('/').pop();
+      const outputPath = `${RNFS.CachesDirectoryPath}/$${
+        fileName.split('.')[0]
+      }_temp.mov`;
 
       const overlayDuration = 5; // duration for each watermark in seconds
 
@@ -294,17 +303,21 @@ export default function VideoCamera({navigation}: any) {
       // Command arguments as a single string
       const comd = session.getCommand();
       console.log(`command===> ${comd}`);
-      return outputPath;
+      // Delete the original file
+      await RNFS.unlink(inputPath);
+      // Rename the temporary file to replace the original file
+      await RNFS.moveFile(outputPath, inputPath);
+      console.log('File replaced successfully');
+      return inputPath;
     } catch (error) {
       console.error('FFmpeg command failed', error);
     }
   };
 
-  const saveQRCode = async () => {
+  const saveQRCode = async (qrCodeDataLocal: any) => {
     return new Promise(async (resolve, reject) => {
-      if (qrCodeDataRef.current) {
-        console.log('qrCodeDataRef==> ' + qrCodeDataRef.current);
-        const savePromises = qrCodeDataRef.current.map(
+      if (qrCodeDataLocal) {
+        const savePromises = qrCodeDataLocal.map(
           (eachQrcodeData: any, index: number) => {
             return new Promise((resolveInner: any) => {
               RNQRGenerator.generate({
@@ -333,6 +346,66 @@ export default function VideoCamera({navigation}: any) {
     });
   };
 
+  async function processNextTask() {
+    if (isProcessing) {
+      // console.log('Waiting for pending task to finish');
+      return;
+    }
+    isProcessing = true;
+    const tasks = await getTasksFromQueue();
+    // console.log(`tasks length: ${tasks.length} tasks: ${JSON.stringify(tasks)}`);
+    const nextTask = tasks.find((task: any) => task.status === 'pending');
+    console.log(`nextTask: ${nextTask}`);
+    if (nextTask) {
+      try {
+        await updateTaskStatus(nextTask.id, 'inprogress');
+        await handleTask(nextTask.payload);
+        await updateTaskStatus(nextTask.id, 'completed');
+        isProcessing = false;
+      } catch (error) {
+        console.error('Error processing task:', error);
+        await updateTaskStatus(nextTask.id, 'pending');
+        isProcessing = false;
+      }
+    } else {
+      // console.log('No tasks present in queue');
+      isProcessing = false;
+    }
+  }
+
+  // Define the logic to handle tasks
+  async function handleTask(payload: any) {
+    console.log('Handling task of payload:', payload);
+    // Task logic here, e.g., making an API call
+    await new Promise(async (resolve: any) => {
+      setIsLoaderActive('Generating QR codes...');
+      const qrCodePaths: any = await saveQRCode(payload.qrCodeData);
+      console.log('qrCodePaths ie watermark paths==> ' + qrCodePaths);
+      setIsLoaderActive('Embedding QR codes...');
+      let videoOutputPath: any = await embedQrCodesInVideo(
+        payload.path,
+        qrCodePaths,
+      );
+      console.log('Qrcode embeded video path==> ' + videoOutputPath);
+      setIsLoaderActive('Extracting frames for hashing...');
+      const segmentFramePaths: any = await extractSegmentFramesForPHash(
+        videoOutputPath,
+      );
+      console.log(
+        'extractedFramesPaths==> ' + JSON.stringify(segmentFramePaths),
+      );
+      setIsLoaderActive('Generating hashes...');
+      const pHashes: any = await generatePhashFromFrames(segmentFramePaths);
+      setIsLoaderActive('Getting video duration...');
+      const videoDuration = payload.duration;
+      setIsLoaderActive('Saving to records...');
+      saveToAPI({pHashes, videoDuration});
+      setIsLoaderActive(null);
+      console.log('resolved');
+      resolve();
+    });
+  }
+
   const startRecording = async () => {
     if (cameraRef.current && !isRecording) {
       try {
@@ -341,34 +414,24 @@ export default function VideoCamera({navigation}: any) {
         setIsRecording(true);
         await cameraRef.current.startRecording({
           onRecordingFinished: async (finishedVideo: VideoFile) => {
-            setIsLoaderActive('Generating QR codes...');
             isRecordingShared.value = false;
             setIsRecording(false);
-            console.log('finishedVideo==> ' + JSON.stringify(finishedVideo));
-            const qrCodePaths: any = await saveQRCode();
-            console.log('qrCodePaths ie watermark paths==> ' + qrCodePaths);
-            setIsLoaderActive('Embedding QR codes...');
-            let videoOutputPath: any = await embedQrCodesInVideo(
-              finishedVideo.path,
-              qrCodePaths,
-            );
-            console.log('Qrcode embeded video path==> ' + videoOutputPath);
-            setIsLoaderActive('Extracting frames for hashing...');
-            const segmentFramePaths: any = await extractSegmentFramesForPHash(
-              videoOutputPath,
-            );
-            console.log(
-              'extractedFramesPaths==> ' + JSON.stringify(segmentFramePaths),
-            );
-            setIsLoaderActive('Generating hashes...');
-            const pHashes: any = await generatePhashFromFrames(
-              segmentFramePaths,
-            );
-            setIsLoaderActive('Getting video duration...');
-            const videoDuration = finishedVideo.duration;
-            setIsLoaderActive('Saving to records...');
-            saveToAPI({pHashes, videoDuration});
-            setIsLoaderActive(null);
+            console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
+            const currTime: any = Date.now();
+            const task = {
+              id: uuid.v4(),
+              type: 'video',
+              payload: {
+                qrCodeData: qrCodeDataRef.current,
+                duration: finishedVideo.duration,
+                path: `${RNFS.PicturesDirectoryPath}/video_${currTime}.mov`,
+                statusPath: `${RNFS.PicturesDirectoryPath}/video_${currTime}_temp.mov`,
+              },
+              status: 'pending',
+              createdAt: new Date().toISOString(),
+            };
+            await RNFS.copyFile(finishedVideo.path, task.payload.path);
+            addTaskToQueue(task);
           },
           onRecordingError: error => {
             isRecordingShared.value = false;
@@ -476,6 +539,15 @@ export default function VideoCamera({navigation}: any) {
     }
   }, []);
 
+  async function checkAsync() {
+    const tasks = await AsyncStorage.getItem('TASK_QUEUE');
+    const parsedTasks = tasks ? JSON.parse(tasks) : [];
+    console.log(parsedTasks);
+  }
+  async function clearAsync() {
+    await AsyncStorage.removeItem('TASK_QUEUE');
+  }
+
   if (!device) {
     return <Text>Loading Camera...</Text>;
   }
@@ -488,7 +560,6 @@ export default function VideoCamera({navigation}: any) {
       />
       {hasPermissions ? (
         <>
-          {isLoaderActive && <Loader loaderText={isLoaderActive} />}
           <Camera
             ref={cameraRef}
             style={StyleSheet.absoluteFill}
@@ -501,8 +572,10 @@ export default function VideoCamera({navigation}: any) {
             fps={30}
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
+          <Text>{isLoaderActive}</Text>
 
-          <Button title="Go to verify" onPress={gotoVerify} />
+          <Button title="Check Async Storage" onPress={checkAsync} />
+          <Button title="Clear Async Storage" onPress={clearAsync} />
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
             <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
@@ -547,11 +620,20 @@ export default function VideoCamera({navigation}: any) {
                   </Svg>
                 </TouchableOpacity>
               )}
-              {!isRecording && <TouchableOpacity
-                onPress={() => navigation.navigate(Paths.VideoLibrary)}
-                style={styles.library_button}>
-                <Icon name="image-outline" size={40} color="#00ACc1" />
-              </TouchableOpacity>}
+              {!isRecording && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate(Paths.VideoLibrary)}
+                  style={styles.library_button_left}>
+                  <Icon name="image-outline" size={40} color="#00ACc1" />
+                </TouchableOpacity>
+              )}
+              {!isRecording && (
+                <TouchableOpacity
+                  onPress={gotoVerify}
+                  style={styles.library_button_right}>
+                  <Icon name="search" size={40} color="#00ACc1" />
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </>
@@ -602,13 +684,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     zIndex: -1,
   },
-  library_button: {
+  library_button_left: {
     position: 'absolute', // Position it absolutely
-    left: 8, // Align it to the left
-    bottom: 2, // Align it to the bottom
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    left: 50, // Align it to the left
+    bottom: 10, // Align it to the bottom
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#f0f0f0', // Customize button background color
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  library_button_right: {
+    position: 'absolute', // Position it absolutely
+    right: 50, // Align it to the left
+    bottom: 10, // Align it to the bottom
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     backgroundColor: '#f0f0f0', // Customize button background color
     justifyContent: 'center',
     alignItems: 'center',

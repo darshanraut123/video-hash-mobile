@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import Video from 'react-native-video';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
@@ -12,40 +12,56 @@ interface VideoItemProps {
   status: string;
 }
 
-const VideoItem: React.FC<VideoItemProps> = ({ uri, width, marginRight, marginBottom, onSelect, status }) =>{
+const VideoItem: React.FC<VideoItemProps> = ({
+  uri,
+  width,
+  marginRight,
+  marginBottom,
+  onSelect,
+  status,
+}) => {
+  const statusIcon =
+    status === 'completed'
+      ? 'check-circle'
+      : status === 'pending'
+      ? 'hourglass-empty'
+      : 'hourglass-bottom';
+  const iconColor =
+    status === 'completed'
+      ? '#4CAF50'
+      : status === 'pending'
+      ? '#880808'
+      : '#FFA500';
 
-     const statusIcon = status === 'inProcess' ? 'hourglass-empty' : 'check-circle';
-     const iconColor = status === 'inProcess' ? '#FFA500' : '#4CAF50';
-
-    return (
-  <TouchableOpacity
-    style={[
-      styles.videoContainer,
-      {
-        width,
-        height: width,
-        marginRight,
-        marginBottom,
-      },
-    ]}
-    onPress={() => onSelect(uri)}
-  >
-    <View style={styles.thumbnailContainer}>
-      <Video
-        source={{ uri }}
-        style={styles.thumbnail}
-        resizeMode="cover"
-        paused={true} // Pause for thumbnail display only
-      />
-    </View>
-    <View style={styles.videoOverlay}>
-      <Text style={styles.videoPlayText}>▶️</Text>
-    </View>
-      <View style={[styles.statusIcon, { backgroundColor: 'rgba(0, 0, 0, 0.6)' }]}>
+  return (
+    <TouchableOpacity
+      style={[
+        styles.videoContainer,
+        {
+          width,
+          height: width,
+          marginRight,
+          marginBottom,
+        },
+      ]}
+      onPress={() => onSelect(uri)}>
+      <View style={styles.thumbnailContainer}>
+        <Video
+          source={{uri}}
+          style={styles.thumbnail}
+          resizeMode="cover"
+          paused={true} // Pause for thumbnail display only
+        />
+      </View>
+      <View style={styles.videoOverlay}>
+        <Text style={styles.videoPlayText}>▶️</Text>
+      </View>
+      <View
+        style={[styles.statusIcon, {backgroundColor: 'rgba(0, 0, 0, 0.6)'}]}>
         <MaterialIcons name={statusIcon} size={20} color={iconColor} />
       </View>
-  </TouchableOpacity>
-);
+    </TouchableOpacity>
+  );
 };
 
 const styles = StyleSheet.create({
@@ -77,7 +93,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: 'white',
   },
-    statusIcon: {
+  statusIcon: {
     position: 'absolute',
     bottom: 5,
     right: 5,
