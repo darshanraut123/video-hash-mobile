@@ -5,6 +5,9 @@ import {StyleSheet, View, Text, TouchableOpacity, Button} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import timer from 'react-native-timer';
+import {Stopwatch} from 'react-native-stopwatch-timer';
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+
 import {
   Camera,
   useCameraDevices,
@@ -34,16 +37,20 @@ import {
   getTasksFromQueue,
   updateTaskStatus,
 } from '../util/queue';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {Switch} from 'react-native';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isTorchOn, setIsTorchOn] = useState(false);
   const [isLoaderActive, setIsLoaderActive] = useState<any>(null);
   const [device, setDevice] = useState<CameraDevice>();
   const [hasPermissions, setHasPermissions] = useState(false);
   const [isCameraInitialized, handleCameraInitialized] = useState(false);
+  const [isStopwatchStart, setIsStopwatchStart] = useState(false);
+  const [resetStopwatch, setResetStopwatch] = useState(false);
+  const [zoom, setZoom] = useState(1);
   const [location, setLocation] = useState<any>(null);
   const qrCodeRef = useRef<any>();
   const canvasRef = useRef<any>();
@@ -412,20 +419,22 @@ export default function VideoCamera({navigation}: any) {
         lastFrameTimestamp.value = 0;
         isRecordingShared.value = true;
         setIsRecording(true);
+        handleStartStopwatch();
         await cameraRef.current.startRecording({
           onRecordingFinished: async (finishedVideo: VideoFile) => {
             isRecordingShared.value = false;
             setIsRecording(false);
+            handleResetStopwatch();
             console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
-            const currTime: any = Date.now();
+            const currentTime: any = Date.now();
             const task = {
               id: uuid.v4(),
               type: 'video',
               payload: {
                 qrCodeData: qrCodeDataRef.current,
                 duration: finishedVideo.duration,
-                path: `${RNFS.PicturesDirectoryPath}/video_${currTime}.mov`,
-                statusPath: `${RNFS.PicturesDirectoryPath}/video_${currTime}_temp.mov`,
+                path: `${RNFS.PicturesDirectoryPath}/video_${currentTime}.mov`,
+                statusPath: `${RNFS.PicturesDirectoryPath}/video_${currentTime}_temp.mov`,
               },
               status: 'pending',
               createdAt: new Date().toISOString(),
@@ -539,14 +548,23 @@ export default function VideoCamera({navigation}: any) {
     }
   }, []);
 
-  async function checkAsync() {
-    const tasks = await AsyncStorage.getItem('TASK_QUEUE');
-    const parsedTasks = tasks ? JSON.parse(tasks) : [];
-    console.log(parsedTasks);
-  }
-  async function clearAsync() {
-    await AsyncStorage.removeItem('TASK_QUEUE');
-  }
+  const handleStartStopwatch = () => {
+    setIsStopwatchStart(!isStopwatchStart);
+    setResetStopwatch(false);
+  };
+
+  const handleResetStopwatch = () => {
+    setIsStopwatchStart(false);
+    setResetStopwatch(true);
+  };
+
+  const handleZoomIn = () => {
+    zoom !== 5 && setZoom(zoom + 0.5);
+  };
+
+  const handleZoomOut = () => {
+    zoom !== 1 && setZoom(zoom - 0.5);
+  };
 
   if (!device) {
     return <Text>Loading Camera...</Text>;
@@ -569,13 +587,49 @@ export default function VideoCamera({navigation}: any) {
             isActive={true}
             video={true}
             audio={true}
+            torch={isTorchOn ? 'on' : 'off'}
+            zoom={zoom} // Set zoom level
             fps={30}
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
           <Text>{isLoaderActive}</Text>
+          <View style={styles.flashLightContainer}>
+            <Text style={styles.label}>Flashlight</Text>
+            <Switch
+              value={isTorchOn}
+              onValueChange={() => setIsTorchOn(!isTorchOn)}
+              thumbColor={isTorchOn ? '#FFD700' : '#f4f3f4'}
+              trackColor={{false: '#767577', true: '#81b0ff'}}
+            />
+          </View>
 
-          <Button title="Check Async Storage" onPress={checkAsync} />
-          <Button title="Clear Async Storage" onPress={clearAsync} />
+          <View style={styles.controls}>
+            <View style={styles.zoomIcon}>
+              <MaterialIcons
+                name={'zoom-in'}
+                onPress={handleZoomIn}
+                size={20}
+                color={'gainsboro'}
+              />
+            </View>
+            <View style={styles.zoomIcon}>
+              <MaterialIcons
+                name={'zoom-out'}
+                onPress={handleZoomOut}
+                size={20}
+                color={'gainsboro'}
+              />
+            </View>
+          </View>
+          {isRecording && (
+            <View style={styles.stopwatchContainer}>
+              <Stopwatch
+                start={isStopwatchStart}
+                reset={resetStopwatch}
+                options={options}
+              />
+            </View>
+          )}
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
             <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
@@ -631,7 +685,7 @@ export default function VideoCamera({navigation}: any) {
                 <TouchableOpacity
                   onPress={gotoVerify}
                   style={styles.library_button_right}>
-                  <Icon name="search" size={40} color="#00ACc1" />
+                  <Icon name="finger-print" size={40} color="#00ACc1" />
                 </TouchableOpacity>
               )}
             </View>
@@ -643,6 +697,20 @@ export default function VideoCamera({navigation}: any) {
     </View>
   );
 }
+
+const options = {
+  container: {
+    backgroundColor: '#000',
+    padding: 5,
+    borderRadius: 5,
+    width: 100,
+  },
+  text: {
+    fontSize: 20,
+    color: '#FFF',
+    marginLeft: 7,
+  },
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -705,5 +773,40 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0', // Customize button background color
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  stopwatchContainer: {
+    position: 'absolute',
+    bottom: 180,
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  label: {
+    fontSize: 10,
+    color: '#FFF',
+    marginBottom: 10,
+  },
+  flashLightContainer: {
+    position: 'absolute',
+    width: '100%',
+    top: 10,
+    display: 'flex',
+    alignItems: 'flex-start',
+  },
+  controls: {
+    position: 'absolute',
+    bottom: 150,
+    width: '100%',
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  zoomIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    height: 50,
+    width: 50,
   },
 });

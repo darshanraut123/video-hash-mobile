@@ -53,8 +53,8 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
             (obj: any) =>
               obj.path === item.path || obj.path === item.statusPath,
           );
-          console.log({...item, status: match.status});
-          return {...item, status: match.status};
+          console.log({...item, status: match ? match.status : 'completed'});
+          return {...item, status: match ? match.status : 'completed'};
         });
         console.log('videoPaths: ' + JSON.stringify(videoPaths));
         setVideos(videoPaths);
@@ -69,7 +69,7 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     <>
       <BlankHeader onClose={() => navigation.goBack()} title="Video Library" />
       <View style={styles.container}>
-        <Text style={styles.title}>Your Uploads</Text>
+        <Text style={styles.title}>Your Videos</Text>
         <VideoList videos={videos} onSelectVideo={setSelectedVideo} />
         {selectedVideo && (
           <Modal visible={true} transparent={false}>
