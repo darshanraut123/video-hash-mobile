@@ -1,4 +1,3 @@
-/* eslint-disable react-native/no-inline-styles */
 import {NavigationProp} from '@react-navigation/native';
 import React from 'react';
 import {
@@ -16,8 +15,7 @@ import {Paths} from '../../../navigation/path';
 import {useAuth} from '../../../components/authProvider';
 import Loader from '../../../components/loader';
 import OauthSignIn from '../../../components/oauthSignIn';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-// import CheckBox from 'react-native-check-box';
+
 interface SignInScreenProps {
   navigation: NavigationProp<any>; // Add explicit type for navigation
 }
