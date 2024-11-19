@@ -6,6 +6,8 @@ import BlankHeader from '../../components/BlankHeader';
 import VideoList from './VideoList';
 import Video from 'react-native-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Share from 'react-native-share';
+import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 
 interface VideoLibraryProps {
   navigation: NavigationProp<any>;
@@ -65,6 +67,20 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     loadVideos();
   }, []);
 
+  const shareVideo = async () => {
+    try {
+      // Share options
+      const options = {
+        url: `file://${selectedVideo}`, // Share video using its file URI
+        type: 'video/*', // Specify the file type
+      };
+
+      await Share.open(options);
+    } catch (error) {
+      console.error('Error sharing video:', error);
+    }
+  };
+
   return (
     <>
       <BlankHeader onClose={() => navigation.goBack()} title="Video Library" />
@@ -75,9 +91,14 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
           <Modal visible={true} transparent={false}>
             <View style={styles.videoPlayerContainer}>
               <TouchableOpacity
+                onPress={() => shareVideo()}
+                style={[styles.closeButton, styles.shareBtn]}>
+                <Icon name="share-outline" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity
                 onPress={() => setSelectedVideo(null)}
                 style={styles.closeButton}>
-                <Text style={styles.closeText}>Close</Text>
+                <Icon name="close" size={24} color="white" />
               </TouchableOpacity>
               <Video
                 source={{uri: selectedVideo}}
@@ -121,8 +142,5 @@ const styles = StyleSheet.create({
     right: 20,
     zIndex: 10,
   },
-  closeText: {
-    color: 'white',
-    fontSize: 18,
-  },
+  shareBtn: {left: 20},
 });

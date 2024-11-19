@@ -37,8 +37,13 @@ export default function OauthSignIn() {
             const token =
               apiresponse.data.user.googleToken || apiresponse.data.user.token;
             await AsyncStorage.setItem('token', token);
+            await AsyncStorage.setItem(
+              'user',
+              JSON.stringify(apiresponse.data.user),
+            );
             setLoginStatus(true);
             console.log('Logged in');
+            console.log(JSON.stringify(apiresponse.data.user));
           } else {
             Alert.alert('Sign Up Failed! Try again.');
           }
@@ -117,6 +122,7 @@ export default function OauthSignIn() {
         await AsyncStorage.setItem('token', token);
         setLoginStatus(true);
         console.log('Logged in');
+        console.log(JSON.stringify(apiresponse.data.user));
       } else {
         Alert.alert('Sign Up Failed! Try again.');
       }

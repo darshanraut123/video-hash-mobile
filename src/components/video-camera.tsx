@@ -1,13 +1,13 @@
 import React, {useEffect, useState, useRef} from 'react';
-import {Platform, PermissionsAndroid, Alert} from 'react-native';
+import {Platform, PermissionsAndroid} from 'react-native';
 import uuid from 'react-native-uuid';
-import {StyleSheet, View, Text, TouchableOpacity, Button} from 'react-native';
+import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import timer from 'react-native-timer';
 import {Stopwatch} from 'react-native-stopwatch-timer';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-
+import Toast from 'react-native-toast-message';
 import {
   Camera,
   useCameraDevices,
@@ -38,9 +38,11 @@ import {
   updateTaskStatus,
 } from '../util/queue';
 import {Switch} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
+  console.log('CAMERAS==> ' + JSON.stringify(devices));
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
@@ -51,7 +53,8 @@ export default function VideoCamera({navigation}: any) {
   const [isStopwatchStart, setIsStopwatchStart] = useState(false);
   const [resetStopwatch, setResetStopwatch] = useState(false);
   const [zoom, setZoom] = useState(1);
-  const [location, setLocation] = useState<any>(null);
+  const [cameraPosition, setCameraPosition] = useState('back');
+  const locationRef = useRef<any>();
   const qrCodeRef = useRef<any>();
   const canvasRef = useRef<any>();
   const canvasStegRef = useRef<any>(null);
@@ -65,24 +68,24 @@ export default function VideoCamera({navigation}: any) {
   const segmentNo = useSharedValue(0);
   const videoId = useSharedValue<any>(null);
   let isProcessing = false;
+  let localBeacon = useRef<any>(null);
+  let userRef = useRef<any>(null);
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
   }, [isRecording, isRecordingShared]);
 
-  let localBeacon = useRef<any>(null);
   useEffect(() => {
     if (devices.length) {
-      setDevice(devices[0]);
-      FFmpegKitConfig.init()
-        .then(() => {
-          console.log('FFmpegKit Initialized');
-        })
-        .catch(error => {
-          console.error('Error Initializing FFmpegKit:', error);
-        });
+      if (cameraPosition === 'back') {
+        const back = devices.find((dev: any) => dev.position === 'back');
+        setDevice(back);
+      } else {
+        const front = devices.find((dev: any) => dev.position === 'front');
+        setDevice(front);
+      }
     }
-  }, [devices]);
+  }, [devices, cameraPosition]);
 
   useEffect(() => {
     const requestPermissions = async () => {
@@ -110,7 +113,7 @@ export default function VideoCamera({navigation}: any) {
           Geolocation.getCurrentPosition(
             position => {
               const {latitude, longitude, altitude} = position.coords;
-              setLocation({latitude, longitude, altitude});
+              locationRef.current = {latitude, longitude, altitude};
             },
             error => {
               console.error(error);
@@ -121,6 +124,23 @@ export default function VideoCamera({navigation}: any) {
       }
     };
 
+    FFmpegKitConfig.init()
+      .then(() => {
+        console.log('FFmpegKit Initialized');
+      })
+      .catch(error => {
+        console.error('Error Initializing FFmpegKit:', error);
+      });
+
+    async function getUser() {
+      // Set user data
+      const userLocal: any = await AsyncStorage.getItem('user');
+      if (userLocal) {
+        userRef.current = JSON.parse(userLocal);
+      }
+    }
+
+    getUser();
     //Prefetch once
     getNistBeacon();
     fetchBeacon();
@@ -473,6 +493,7 @@ export default function VideoCamera({navigation}: any) {
       videoId: videoId.value,
       fullVideoHash: pHashes.join(''),
       duration: videoDuration,
+      user: userRef.current,
       cellTower: {
         timestamp: new Date().toISOString(),
         network: {
@@ -481,9 +502,9 @@ export default function VideoCamera({navigation}: any) {
         },
       },
       gps: {
-        latitude: location?.latitude || 0,
-        longitude: location?.longitude || 0,
-        altitude: location?.altitude || 0,
+        latitude: locationRef.current?.latitude || 0,
+        longitude: locationRef.current?.longitude || 0,
+        altitude: locationRef.current?.altitude || 0,
         timestamp: new Date().toISOString(),
       },
       nistRandom: {
@@ -494,6 +515,7 @@ export default function VideoCamera({navigation}: any) {
       },
       segments,
     };
+    console.log(JSON.stringify(apiBody));
     const res = await saveVideoHash(apiBody)
       .then(resp => resp)
       .finally(() => {
@@ -593,16 +615,26 @@ export default function VideoCamera({navigation}: any) {
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
           <Text>{isLoaderActive}</Text>
-          <View style={styles.flashLightContainer}>
-            <Text style={styles.label}>Flashlight</Text>
-            <Switch
-              value={isTorchOn}
-              onValueChange={() => setIsTorchOn(!isTorchOn)}
-              thumbColor={isTorchOn ? '#FFD700' : '#f4f3f4'}
-              trackColor={{false: '#767577', true: '#81b0ff'}}
+          <TouchableOpacity
+            style={styles.flashLightContainer}
+            onPress={() => setIsTorchOn(!isTorchOn)}>
+            <MaterialIcons
+              name={'flashlight-on'}
+              size={25}
+              color={isTorchOn ? '#FFD700' : '#f4f3f4'}
             />
-          </View>
-
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cameraSwicthContainer}
+            onPress={() =>
+              setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
+            }>
+            <MaterialIcons
+              name={'cameraswitch'}
+              size={25}
+              color={'gainsboro'}
+            />
+          </TouchableOpacity>
           <View style={styles.controls}>
             <View style={styles.zoomIcon}>
               <MaterialIcons
@@ -688,6 +720,7 @@ export default function VideoCamera({navigation}: any) {
                   <Icon name="finger-print" size={40} color="#00ACc1" />
                 </TouchableOpacity>
               )}
+              <Toast />
             </View>
           )}
         </>
@@ -789,10 +822,23 @@ const styles = StyleSheet.create({
   },
   flashLightContainer: {
     position: 'absolute',
-    width: '100%',
-    top: 10,
+    width: 40,
+    height: 40,
+    top: 30,
+    left: 10,
     display: 'flex',
-    alignItems: 'flex-start',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraSwicthContainer: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    top: 80,
+    left: 10,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   controls: {
     position: 'absolute',

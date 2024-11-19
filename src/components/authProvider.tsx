@@ -38,6 +38,7 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({children}) => {
       console.log(JSON.stringify(response.data));
       console.log('token', token);
       setAsyncStorage('token', token);
+      setAsyncStorage('user', JSON.stringify(response.data.user));
       setIsLoggedIn(true);
     } else {
       Alert.alert('Login failed!');
@@ -58,7 +59,10 @@ export const AuthProvider: React.FC<{children: ReactNode}> = ({children}) => {
     const asyncFunction = async () => {
       console.log('getting token from async storage');
       let token: any = await getAsyncStorage('token');
+      let user: any = await getAsyncStorage('user');
+
       console.log('Token: ' + token);
+      console.log('User: ' + user);
       if (!token) {
         logout();
         return;
