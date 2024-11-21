@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet, Image} from 'react-native';
-import {nocamera} from '../assets/images/imageExports';
+import {nocamera, nopermissions} from '../assets/images/imageExports';
 
 interface NoCameraDeviceErrorI {
   imageName: string;
@@ -17,6 +17,8 @@ const CustomError: React.FC<NoCameraDeviceErrorI> = ({
     switch (imageNameLocal) {
       case 'nocamera':
         return nocamera;
+      case 'nopermissions':
+        return nopermissions;
     }
   }
 

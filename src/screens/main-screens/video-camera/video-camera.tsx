@@ -1,11 +1,16 @@
 import React, {useEffect, useState, useRef, useCallback} from 'react';
-import {Platform, PermissionsAndroid} from 'react-native';
+import {
+  Platform,
+  PermissionsAndroid,
+  GestureResponderEvent,
+} from 'react-native';
 import uuid from 'react-native-uuid';
 import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import timer from 'react-native-timer';
 import {Stopwatch} from 'react-native-stopwatch-timer';
+import {useIsFocused} from '@react-navigation/native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Toast from 'react-native-toast-message';
 import {
@@ -14,32 +19,32 @@ import {
   VideoFile,
   CameraDevice,
   useFrameProcessor,
-  Point,
 } from 'react-native-vision-camera';
 import {FFmpegKit, FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import {
   getLocalBeaconAPI,
   getNistBeaconAPI,
   saveVideoHash,
-} from '../../service/hashrequests';
+} from '../../../service/hashrequests';
 import {Worklets, useSharedValue} from 'react-native-worklets-core';
-import pHash from '../../util/phash';
+import pHash from '../../../util/phash';
 import Svg, {Path} from 'react-native-svg';
-import QrCodeComponent from '../../components/qr-code';
+import QrCodeComponent from '../../../components/qr-code';
 import RNFS from 'react-native-fs';
 import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
-import {extractSegmentFramesForPHash} from '../../util/ffmpegUtil';
+import {extractSegmentFramesForPHash} from '../../../util/ffmpegUtil';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {Paths} from '../../navigation/path';
+import {Paths} from '../../../navigation/path';
 import {
   addTaskToQueue,
   getTasksFromQueue,
   updateTaskStatus,
-} from '../../util/queue';
+} from '../../../util/queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import CustomError from '../../components/customError';
+import CustomError from '../../../components/customError';
+import styles from './styles';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -52,7 +57,6 @@ export default function VideoCamera({navigation}: any) {
   const [isCameraInitialized, handleCameraInitialized] = useState(false);
   const [isStopwatchStart, setIsStopwatchStart] = useState(false);
   const [resetStopwatch, setResetStopwatch] = useState(false);
-  const [zoom, setZoom] = useState(1);
   const [cameraPosition, setCameraPosition] = useState('back');
   const locationRef = useRef<any>();
   const qrCodeRef = useRef<any>();
@@ -70,10 +74,16 @@ export default function VideoCamera({navigation}: any) {
   let isProcessing = false;
   let localBeacon = useRef<any>(null);
   let userRef = useRef<any>(null);
+  const isFocused = useIsFocused();
+  const [isCameraActive, setCameraActive] = useState(false);
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
   }, [isRecording, isRecordingShared]);
+
+  useEffect(() => {
+    isFocused ? setCameraActive(true) : setCameraActive(false);
+  }, [isFocused]);
 
   useEffect(() => {
     if (devices.length) {
@@ -107,8 +117,6 @@ export default function VideoCamera({navigation}: any) {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
         if (PermissionsAndroid.RESULTS.GRANTED === 'granted') {
-          // do something if granted...
-
           // Get GPS data
           Geolocation.getCurrentPosition(
             position => {
@@ -157,6 +165,17 @@ export default function VideoCamera({navigation}: any) {
       timer.intervalExists('queueTimer') && timer.clearInterval('queueTimer');
     };
   }, []);
+
+  const handleFocus = useCallback(
+    async ({nativeEvent}: GestureResponderEvent) => {
+      console.log(`X: ${nativeEvent.pageX} Y: ${nativeEvent.pageY}`);
+      await cameraRef?.current?.focus({
+        x: Math.round(nativeEvent.pageX),
+        y: Math.round(nativeEvent.pageY),
+      });
+    },
+    [],
+  );
 
   const setQrCodes = Worklets.createRunOnJS(() => {
     try {
@@ -588,14 +607,6 @@ export default function VideoCamera({navigation}: any) {
     setResetStopwatch(true);
   };
 
-  const handleZoomIn = () => {
-    zoom !== 5 && setZoom(zoom + 0.5);
-  };
-
-  const handleZoomOut = () => {
-    zoom !== 1 && setZoom(zoom - 0.5);
-  };
-
   if (!device) {
     return (
       <CustomError
@@ -627,18 +638,20 @@ export default function VideoCamera({navigation}: any) {
           frameProcessor={frameProcessor} // Use the frame processor
           device={device}
           format={device?.formats[0]}
-          isActive={true}
+          isActive={isCameraActive}
           video={true}
           audio={true}
           torch={isTorchOn ? 'on' : 'off'}
-          zoom={zoom} // Set zoom level
+          enableZoomGesture={true}
           fps={30}
+          onTouchStart={handleFocus}
           onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
         />
+
         <Text>{isLoaderActive}</Text>
         <TouchableOpacity
           style={styles.flashLightContainer}
-          onPress={() => setIsTorchOn(!isTorchOn)}>
+          onPress={() => setIsTorchOn(prev => !prev)}>
           <MaterialIcons
             name={'flashlight-on'}
             size={25}
@@ -652,24 +665,7 @@ export default function VideoCamera({navigation}: any) {
           }>
           <MaterialIcons name={'cameraswitch'} size={25} color={'gainsboro'} />
         </TouchableOpacity>
-        <View style={styles.controls}>
-          <View style={styles.zoomIcon}>
-            <MaterialIcons
-              name={'zoom-in'}
-              onPress={handleZoomIn}
-              size={20}
-              color={'gainsboro'}
-            />
-          </View>
-          <View style={styles.zoomIcon}>
-            <MaterialIcons
-              name={'zoom-out'}
-              onPress={handleZoomOut}
-              size={20}
-              color={'gainsboro'}
-            />
-          </View>
-        </View>
+
         {isRecording && (
           <View style={styles.stopwatchContainer}>
             <Stopwatch
@@ -683,7 +679,6 @@ export default function VideoCamera({navigation}: any) {
           <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
           <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
         </View>
-
         {isRecording && (
           <View style={styles.qrcodeContainer}>
             <QRCode
@@ -758,120 +753,3 @@ const options = {
     marginLeft: 7,
   },
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: 'black',
-  },
-  buttonContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginBottom: 50,
-  },
-  start_recording_button: {
-    padding: 15,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#77c78d',
-  },
-  stop_recording_button: {
-    padding: 15,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#CC0033',
-  },
-  text: {
-    fontSize: 18,
-    color: 'white',
-  },
-  qrcodeContainer: {
-    flex: 1,
-    padding: 10,
-    justifyContent: 'flex-start',
-    alignItems: 'flex-end',
-  },
-  absQrcodeContainer: {
-    position: 'absolute',
-    zIndex: -1,
-  },
-  library_button_left: {
-    position: 'absolute', // Position it absolutely
-    left: 50, // Align it to the left
-    bottom: 10, // Align it to the bottom
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0', // Customize button background color
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  library_button_right: {
-    position: 'absolute', // Position it absolutely
-    right: 50, // Align it to the left
-    bottom: 10, // Align it to the bottom
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0', // Customize button background color
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  stopwatchContainer: {
-    position: 'absolute',
-    bottom: 180,
-    width: '100%',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  label: {
-    fontSize: 10,
-    color: '#FFF',
-    marginBottom: 10,
-  },
-  flashLightContainer: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    top: 30,
-    left: 10,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cameraSwicthContainer: {
-    position: 'absolute',
-    width: 40,
-    height: 40,
-    top: 80,
-    left: 10,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  controls: {
-    position: 'absolute',
-    bottom: 150,
-    width: '100%',
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  zoomIcon: {
-    display: 'flex',
-    alignItems: 'center',
-    height: 50,
-    width: 50,
-  },
-  canvasStyle: {
-    backgroundColor: 'white',
-    height: 32,
-    width: 32,
-  },
-});
