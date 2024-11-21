@@ -45,6 +45,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomError from '../../../components/customError';
 import styles from './styles';
+import {useIsForeground} from './useIsForeground';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -75,6 +76,7 @@ export default function VideoCamera({navigation}: any) {
   let localBeacon = useRef<any>(null);
   let userRef = useRef<any>(null);
   const isFocused = useIsFocused();
+  const isForeground = useIsForeground();
   const [isCameraActive, setCameraActive] = useState(false);
 
   useEffect(() => {
@@ -82,8 +84,9 @@ export default function VideoCamera({navigation}: any) {
   }, [isRecording, isRecordingShared]);
 
   useEffect(() => {
-    isFocused ? setCameraActive(true) : setCameraActive(false);
-  }, [isFocused]);
+    console.log(isFocused, isForeground);
+    setCameraActive(isFocused && isForeground);
+  }, [isFocused, isForeground]);
 
   useEffect(() => {
     if (devices.length) {
