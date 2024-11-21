@@ -2,8 +2,8 @@ import React from 'react';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import {Paths} from './path';
-import VideoCamera from '../components/video-camera';
-import Verify from '../components/verify';
+import VideoCamera from '../screens/main-screens/video-camera';
+import Verify from '../screens/main-screens/verify';
 import VideoLibrary from '../screens/video-library/VideoLibrary';
 
 const Stack = createNativeStackNavigator();

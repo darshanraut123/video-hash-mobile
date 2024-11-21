@@ -1,27 +1,24 @@
 import React from 'react';
-import { FlatList, StyleSheet, Dimensions } from 'react-native';
+import {FlatList, StyleSheet, Dimensions} from 'react-native';
 import VideoItem from './VideoItem';
-import { VideoInterface } from './VideoLibrary';
 
-const { width } = Dimensions.get('window');
+const {width} = Dimensions.get('window');
 const numColumns = 3;
 const itemPadding = 6;
 const extraRightMargin = 10;
-const itemWidth = (width - itemPadding * (numColumns + 1) - extraRightMargin) / numColumns;
+const itemWidth =
+  (width - itemPadding * (numColumns + 1) - extraRightMargin) / numColumns;
 
-interface VideoListProps {
-  videos: VideoInterface[];
-  onSelectVideo: (uri: string) => void;
-}
-
-const VideoList: React.FC<VideoListProps> = ({ videos, onSelectVideo }) => {
-  const renderVideoItem = ({ item, index }: { item: VideoInterface; index: number }) => (
+const VideoList: React.FC<any> = ({videos, onSelectVideo, showVideoInfo}) => {
+  const renderVideoItem = ({item, index}: {item: any; index: number}) => (
     <VideoItem
       uri={item.path}
+      videoInfo={item}
       width={itemWidth}
       marginRight={(index + 1) % numColumns === 0 ? 0 : itemPadding}
       marginBottom={itemPadding}
       onSelect={onSelectVideo}
+      showVideoInfo={showVideoInfo}
       status={item.status}
     />
   );

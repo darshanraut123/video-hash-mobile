@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  Alert,
 } from 'react-native';
-import {Button, Icon} from 'react-native-elements';
+import {Button} from 'react-native-elements';
 import {Paths} from '../../../navigation/path';
 import {useAuth} from '../../../components/authProvider';
 import Loader from '../../../components/loader';
 import OauthSignIn from '../../../components/oauthSignIn';
+import Toast from 'react-native-toast-message';
 
 interface SignInScreenProps {
   navigation: NavigationProp<any>; // Add explicit type for navigation
@@ -27,7 +27,12 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
 
   function onLogibBtnClick() {
     if (!email || !password) {
-      Alert.alert('Provide email and password');
+      Toast.show({
+        type: 'error',
+        text1: '😬',
+        text2: 'Provide email and password',
+        position: 'bottom',
+      });
       return;
     }
     login({password, email, loginType: 'email'});
@@ -36,13 +41,9 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
   return isLoading ? (
     <Loader loaderText={'Logging in...'} />
   ) : (
-    <ScrollView>
-      <View style={styles.container}>
-        {/* Close Button */}
-        <TouchableOpacity style={styles.closeButton}>
-          <Icon name="close" size={24} color="#000" />
-        </TouchableOpacity>
-
+    <View style={styles.container}>
+      <Toast />
+      <ScrollView>
         {/* Header */}
         <View style={styles.header}>
           <Image
@@ -105,8 +106,8 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
         {/* Divider */}
         <View style={styles.divider} />
         <OauthSignIn />
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -118,6 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
     justifyContent: 'center',
+    height: '100%',
   },
   closeButton: {
     position: 'absolute',

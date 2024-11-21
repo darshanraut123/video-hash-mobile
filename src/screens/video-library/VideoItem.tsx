@@ -5,11 +5,13 @@ import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
 interface VideoItemProps {
   uri: string;
+  videoInfo:any,
   width: number;
   marginRight: number;
   marginBottom: number;
   onSelect: (uri: string) => void;
   status: string;
+  showVideoInfo: (videoInfo: any) => {};
 }
 
 const VideoItem: React.FC<VideoItemProps> = ({
@@ -19,6 +21,8 @@ const VideoItem: React.FC<VideoItemProps> = ({
   marginBottom,
   onSelect,
   status,
+  showVideoInfo,
+  videoInfo
 }) => {
   const statusIcon =
     status === 'completed'
@@ -56,8 +60,10 @@ const VideoItem: React.FC<VideoItemProps> = ({
       <View style={styles.videoOverlay}>
         <Text style={styles.videoPlayText}>▶️</Text>
       </View>
-      <View
-        style={[styles.statusIcon, {backgroundColor: 'rgba(0, 0, 0, 0.6)'}]}>
+      <TouchableOpacity onPress={() => showVideoInfo(videoInfo)} style={styles.infoIcon}>
+        <MaterialIcons name={'info-outline'} size={20} color={'#FFFA'} />
+      </TouchableOpacity>
+      <View style={styles.statusIcon}>
         <MaterialIcons name={statusIcon} size={20} color={iconColor} />
       </View>
     </TouchableOpacity>
@@ -96,9 +102,23 @@ const styles = StyleSheet.create({
   statusIcon: {
     position: 'absolute',
     bottom: 5,
-    right: 5,
+    left: 5,
     borderRadius: 12, // Circular background for the icon
     padding: 4, // Padding for a larger clickable area and better visibility
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  },
+  infoIcon: {
+    position: 'absolute',
+    height: 30,
+    width: 30,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    top: 5,
+    right: 5,
+    borderRadius: 15, // Circular background for the icon
+    padding: 4, // Padding for a larger clickable area and better visibility
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
 });
 

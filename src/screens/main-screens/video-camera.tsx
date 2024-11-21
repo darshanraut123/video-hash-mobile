@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {Platform, PermissionsAndroid} from 'react-native';
 import uuid from 'react-native-uuid';
 import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
@@ -14,35 +14,35 @@ import {
   VideoFile,
   CameraDevice,
   useFrameProcessor,
+  Point,
 } from 'react-native-vision-camera';
 import {FFmpegKit, FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import {
   getLocalBeaconAPI,
   getNistBeaconAPI,
   saveVideoHash,
-} from '../service/hashrequests';
+} from '../../service/hashrequests';
 import {Worklets, useSharedValue} from 'react-native-worklets-core';
-import pHash from '../util/phash';
+import pHash from '../../util/phash';
 import Svg, {Path} from 'react-native-svg';
-import QrCodeComponent from './qr-code';
+import QrCodeComponent from '../../components/qr-code';
 import RNFS from 'react-native-fs';
 import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
-import {extractSegmentFramesForPHash} from '../util/ffmpegUtil';
+import {extractSegmentFramesForPHash} from '../../util/ffmpegUtil';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {Paths} from '../navigation/path';
+import {Paths} from '../../navigation/path';
 import {
   addTaskToQueue,
   getTasksFromQueue,
   updateTaskStatus,
-} from '../util/queue';
-import {Switch} from 'react-native';
+} from '../../util/queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CustomError from '../../components/customError';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
-  console.log('CAMERAS==> ' + JSON.stringify(devices));
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
@@ -140,12 +140,11 @@ export default function VideoCamera({navigation}: any) {
       }
     }
 
-    getUser();
     //Prefetch once
     getNistBeacon();
     fetchBeacon();
-
     requestPermissions();
+    getUser();
 
     // timers maintained in the Map timer.intervals
     timer.setInterval('fbTimer', fetchBeacon, 3000);
@@ -426,7 +425,7 @@ export default function VideoCamera({navigation}: any) {
       setIsLoaderActive('Getting video duration...');
       const videoDuration = payload.duration;
       setIsLoaderActive('Saving to records...');
-      saveToAPI({pHashes, videoDuration});
+      saveToAPI({pHashes, videoDuration, videoOutputPath});
       setIsLoaderActive(null);
       console.log('resolved');
       resolve();
@@ -477,7 +476,7 @@ export default function VideoCamera({navigation}: any) {
     }
   };
 
-  const saveToAPI = async ({pHashes, videoDuration}: any) => {
+  const saveToAPI = async ({pHashes, videoDuration, videoOutputPath}: any) => {
     const deviceId = await DeviceInfo.getUniqueId();
     const carrierName = await DeviceInfo.getCarrier();
     const ipAddress = await DeviceInfo.getIpAddress();
@@ -492,8 +491,17 @@ export default function VideoCamera({navigation}: any) {
     const apiBody = {
       videoId: videoId.value,
       fullVideoHash: pHashes.join(''),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       duration: videoDuration,
       user: userRef.current,
+      publicData: {
+        path: videoOutputPath,
+        email: userRef.current.email,
+        name: userRef.current.name,
+        duration: videoDuration,
+        createdAt: new Date().toISOString(),
+      },
       cellTower: {
         timestamp: new Date().toISOString(),
         network: {
@@ -589,144 +597,150 @@ export default function VideoCamera({navigation}: any) {
   };
 
   if (!device) {
-    return <Text>Loading Camera...</Text>;
+    return (
+      <CustomError
+        imageName="nocamera"
+        mainTxt="No Camera Detected"
+        subTxt="We couldn't find a camera on your device. Please ensure the camera is
+        properly connected or enabled."
+      />
+    );
+  }
+
+  if (!hasPermissions) {
+    return (
+      <CustomError
+        imageName="nopermissions"
+        mainTxt="Requesting permissions"
+        subTxt="We need your camera, location, microphone permissions to provide services and enhance your experience."
+      />
+    );
   }
 
   return (
     <View style={styles.container}>
-      <Canvas
-        style={{backgroundColor: 'white', height: 32, width: 32}}
-        ref={canvasRef}
-      />
-      {hasPermissions ? (
-        <>
-          <Camera
-            ref={cameraRef}
-            style={StyleSheet.absoluteFill}
-            frameProcessor={frameProcessor} // Use the frame processor
-            device={device}
-            format={device?.formats[0]}
-            isActive={true}
-            video={true}
-            audio={true}
-            torch={isTorchOn ? 'on' : 'off'}
-            zoom={zoom} // Set zoom level
-            fps={30}
-            onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
+      <Canvas style={styles.canvasStyle} ref={canvasRef} />
+      <>
+        <Camera
+          ref={cameraRef}
+          style={StyleSheet.absoluteFill}
+          frameProcessor={frameProcessor} // Use the frame processor
+          device={device}
+          format={device?.formats[0]}
+          isActive={true}
+          video={true}
+          audio={true}
+          torch={isTorchOn ? 'on' : 'off'}
+          zoom={zoom} // Set zoom level
+          fps={30}
+          onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
+        />
+        <Text>{isLoaderActive}</Text>
+        <TouchableOpacity
+          style={styles.flashLightContainer}
+          onPress={() => setIsTorchOn(!isTorchOn)}>
+          <MaterialIcons
+            name={'flashlight-on'}
+            size={25}
+            color={isTorchOn ? '#FFD700' : '#f4f3f4'}
           />
-          <Text>{isLoaderActive}</Text>
-          <TouchableOpacity
-            style={styles.flashLightContainer}
-            onPress={() => setIsTorchOn(!isTorchOn)}>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.cameraSwicthContainer}
+          onPress={() =>
+            setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
+          }>
+          <MaterialIcons name={'cameraswitch'} size={25} color={'gainsboro'} />
+        </TouchableOpacity>
+        <View style={styles.controls}>
+          <View style={styles.zoomIcon}>
             <MaterialIcons
-              name={'flashlight-on'}
-              size={25}
-              color={isTorchOn ? '#FFD700' : '#f4f3f4'}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.cameraSwicthContainer}
-            onPress={() =>
-              setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
-            }>
-            <MaterialIcons
-              name={'cameraswitch'}
-              size={25}
+              name={'zoom-in'}
+              onPress={handleZoomIn}
+              size={20}
               color={'gainsboro'}
             />
-          </TouchableOpacity>
-          <View style={styles.controls}>
-            <View style={styles.zoomIcon}>
-              <MaterialIcons
-                name={'zoom-in'}
-                onPress={handleZoomIn}
-                size={20}
-                color={'gainsboro'}
-              />
-            </View>
-            <View style={styles.zoomIcon}>
-              <MaterialIcons
-                name={'zoom-out'}
-                onPress={handleZoomOut}
-                size={20}
-                color={'gainsboro'}
-              />
-            </View>
           </View>
-          {isRecording && (
-            <View style={styles.stopwatchContainer}>
-              <Stopwatch
-                start={isStopwatchStart}
-                reset={resetStopwatch}
-                options={options}
-              />
-            </View>
-          )}
-          <View style={styles.absQrcodeContainer}>
-            <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
-            <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
+          <View style={styles.zoomIcon}>
+            <MaterialIcons
+              name={'zoom-out'}
+              onPress={handleZoomOut}
+              size={20}
+              color={'gainsboro'}
+            />
           </View>
+        </View>
+        {isRecording && (
+          <View style={styles.stopwatchContainer}>
+            <Stopwatch
+              start={isStopwatchStart}
+              reset={resetStopwatch}
+              options={options}
+            />
+          </View>
+        )}
+        <View style={styles.absQrcodeContainer}>
+          <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
+          <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
+        </View>
 
-          {isRecording && (
-            <View style={styles.qrcodeContainer}>
-              <QRCode
-                backgroundColor="white"
-                value={JSON.stringify(jsonObject)}
-                size={80}
-                getRef={ref => (qrCodeRef.current = ref)}
-              />
-            </View>
-          )}
-          {isCameraInitialized && (
-            <View style={styles.buttonContainer}>
-              {isRecording ? (
-                <TouchableOpacity
-                  onPress={stopRecording}
-                  style={styles.stop_recording_button}>
-                  <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
-                    <Path
-                      fill="#1C274C"
-                      fillRule="evenodd"
-                      d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM8.586 8.586C8 9.172 8 10.114 8 12c0 1.886 0 2.828.586 3.414C9.172 16 10.114 16 12 16c1.886 0 2.828 0 3.414-.586C16 14.828 16 13.886 16 12c0-1.886 0-2.828-.586-3.414C14.828 8 13.886 8 12 8c-1.886 0-2.828 0-3.414.586Z"
-                      clipRule="evenodd"
-                    />
-                  </Svg>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  onPress={startRecording}
-                  style={styles.start_recording_button}>
-                  <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
-                    <Path
-                      fill="#1C274C"
-                      fillRule="evenodd"
-                      d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1.306-6.154 4.72-2.787c.781-.462.781-1.656 0-2.118l-4.72-2.787C9.934 7.706 9 8.29 9 9.214v5.573c0 .923.934 1.507 1.694 1.059Z"
-                      clipRule="evenodd"
-                    />
-                  </Svg>
-                </TouchableOpacity>
-              )}
-              {!isRecording && (
-                <TouchableOpacity
-                  onPress={() => navigation.navigate(Paths.VideoLibrary)}
-                  style={styles.library_button_left}>
-                  <Icon name="image-outline" size={40} color="#00ACc1" />
-                </TouchableOpacity>
-              )}
-              {!isRecording && (
-                <TouchableOpacity
-                  onPress={gotoVerify}
-                  style={styles.library_button_right}>
-                  <Icon name="finger-print" size={40} color="#00ACc1" />
-                </TouchableOpacity>
-              )}
-              <Toast />
-            </View>
-          )}
-        </>
-      ) : (
-        <Text style={styles.text}>Requesting Permissions...</Text>
-      )}
+        {isRecording && (
+          <View style={styles.qrcodeContainer}>
+            <QRCode
+              backgroundColor="white"
+              value={JSON.stringify(jsonObject)}
+              size={80}
+              getRef={ref => (qrCodeRef.current = ref)}
+            />
+          </View>
+        )}
+        {isCameraInitialized && (
+          <View style={styles.buttonContainer}>
+            {isRecording ? (
+              <TouchableOpacity
+                onPress={stopRecording}
+                style={styles.stop_recording_button}>
+                <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
+                  <Path
+                    fill="#1C274C"
+                    fillRule="evenodd"
+                    d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM8.586 8.586C8 9.172 8 10.114 8 12c0 1.886 0 2.828.586 3.414C9.172 16 10.114 16 12 16c1.886 0 2.828 0 3.414-.586C16 14.828 16 13.886 16 12c0-1.886 0-2.828-.586-3.414C14.828 8 13.886 8 12 8c-1.886 0-2.828 0-3.414.586Z"
+                    clipRule="evenodd"
+                  />
+                </Svg>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={startRecording}
+                style={styles.start_recording_button}>
+                <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
+                  <Path
+                    fill="#1C274C"
+                    fillRule="evenodd"
+                    d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1.306-6.154 4.72-2.787c.781-.462.781-1.656 0-2.118l-4.72-2.787C9.934 7.706 9 8.29 9 9.214v5.573c0 .923.934 1.507 1.694 1.059Z"
+                    clipRule="evenodd"
+                  />
+                </Svg>
+              </TouchableOpacity>
+            )}
+            {!isRecording && (
+              <TouchableOpacity
+                onPress={() => navigation.navigate(Paths.VideoLibrary)}
+                style={styles.library_button_left}>
+                <Icon name="image-outline" size={40} color="#00ACc1" />
+              </TouchableOpacity>
+            )}
+            {!isRecording && (
+              <TouchableOpacity
+                onPress={gotoVerify}
+                style={styles.library_button_right}>
+                <Icon name="finger-print" size={40} color="#00ACc1" />
+              </TouchableOpacity>
+            )}
+            <Toast />
+          </View>
+        )}
+      </>
     </View>
   );
 }
@@ -854,5 +868,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     height: 50,
     width: 50,
+  },
+  canvasStyle: {
+    backgroundColor: 'white',
+    height: 32,
+    width: 32,
   },
 });

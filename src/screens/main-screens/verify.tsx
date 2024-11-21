@@ -1,10 +1,7 @@
 import {
   View,
   Text,
-  Button,
   ScrollView,
-  Alert,
-  Image,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -12,29 +9,28 @@ import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
-import {findVideoInfo} from '../service/hashrequests';
-import Loader from './loader';
+import {findVideoInfo} from '../../service/hashrequests';
+import Loader from '../../components/loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
-import pHash from '../util/phash';
+import pHash from '../../util/phash';
 import {
   extractEveryFrameWithTimestamp,
   extractFirstFrameAndGetVideoInfoFromDB,
   extractSegmentFramesForPHash,
   extractSegmentFramesForQrcode,
   getVideoDuration,
-} from '../util/ffmpegUtil';
+} from '../../util/ffmpegUtil';
 import {
   // calculateSegmentOverlap,
   percentageMatch,
-} from '../util/common';
-import {useAuth} from './authProvider';
+} from '../../util/common';
+import {useAuth} from '../../components/authProvider';
 import * as Progress from 'react-native-progress';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 import Video from 'react-native-video';
-import {Paths} from '../navigation/path';
+import {Paths} from '../../navigation/path';
 import Share from 'react-native-share';
 import Toast from 'react-native-toast-message';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Verify: React.FC<any> = ({route, navigation}) => {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
