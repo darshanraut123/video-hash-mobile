@@ -4,6 +4,7 @@ import AppNavigator from './src/navigation/root-navigator';
 import {AuthProvider} from './src/components/auth-provider';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {resetTasksOnAppStart} from './src/util/queue';
+import {StyleSheet} from 'react-native';
 
 const App: React.FC = () => {
   React.useEffect(() => {
@@ -15,12 +16,16 @@ const App: React.FC = () => {
     console.log('GoogleSignin configured');
   }, []);
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <SafeAreaView style={styles.appContainer}>
       <AuthProvider>
         <AppNavigator />
       </AuthProvider>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  appContainer: {flex: 1},
+});
 
 export default App;

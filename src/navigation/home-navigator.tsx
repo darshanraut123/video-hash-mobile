@@ -36,7 +36,7 @@ const HomeStack: React.FC<any> = ({navigation}) => {
     <Stack.Navigator
       initialRouteName={Paths.VideoCamera}
       screenOptions={{headerShown: false}}>
-      <Stack.Screen name={Paths.VideoCamera} component={VideoCamera} />
+      {/* <Stack.Screen name={Paths.VideoCamera} component={VideoCamera} /> */}
       <Stack.Screen name={Paths.Verify} component={Verify} />
       <Stack.Screen name={Paths.VideoLibrary} component={VideoLibrary} />
       <Stack.Screen name={Paths.PhotoLibrary} component={PhotoLibrary} />

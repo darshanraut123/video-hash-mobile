@@ -13,18 +13,19 @@ if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
   use_frameworks! :linkage => linkage.to_sym
 end
-use_frameworks! :linkage => :static
-$RNFirebaseAsStaticFramework = true
+
 target 'RealityRegistry' do
   config = use_native_modules!
-
+  use_frameworks! :linkage => :static
+  $RNFirebaseAsStaticFramework = true
+  # pod 'ZXingObjC', '~> 3.6.9'
   use_react_native!(
     :path => config[:reactNativePath],
     # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
-  target 'VideoHashTests' do
+  target 'RealityRegistryTests' do
     inherit! :complete
     # Pods for testing
   end

@@ -2,7 +2,7 @@ import {View, Text, ScrollView, TouchableOpacity} from 'react-native';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
-import RNQRGenerator from 'rn-qr-generator';
+// import RNQRGenerator from 'rn-qr-generator';
 import {findVideoInfo} from '../../../service/hash-requests';
 import Loader from '../../../components/loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
@@ -34,15 +34,15 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   const canvasRef = React.useRef<any>();
   let currentSegmentInfo: any = null;
   const {logout} = useAuth(); // Get login status from AuthContext
-  const {path} = route.params; // Extract path from route.params
+  // const {path} = route.params; // Extract path from route.params
 
-  React.useEffect(() => {
-    if (path) {
-      console.log('path: ' + path);
-      verifyVideo('file://' + path); // Call verifyVideo when the component mounts or path changes
-      setUri('file://' + path);
-    }
-  }, [path]); // Dependency array ensures this runs only when `path` changes
+  // React.useEffect(() => {
+  //   if (path) {
+  //     console.log('path: ' + path);
+  //     verifyVideo('file://' + path); // Call verifyVideo when the component mounts or path changes
+  //     setUri('file://' + path);
+  //   }
+  // }, [path]); // Dependency array ensures this runs only when `path` changes
 
   const pickAndVerifyVideo = async () => {
     const res: any = await launchImageLibrary({mediaType: 'mixed'});
@@ -255,9 +255,10 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     setIsLoaderActive('Decoding qr codes');
 
     for (let index = 0; index < verifycroppedframePaths.length; index++) {
-      const response = await RNQRGenerator.detect({
-        uri: verifycroppedframePaths[index],
-      });
+      const response = {values: ''};
+      // await RNQRGenerator.detect({
+      //   uri: verifycroppedframePaths[index],
+      // });
       const {values} = response; // Array of detected QR code values. Empty if nothing found.
       console.log(values);
       if (values.length) {
@@ -327,9 +328,10 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     let flag: boolean = true;
     setIsLoaderActive('Extracting QR codes');
     for (let index = 0; index < sortedFilePaths.length; index++) {
-      const response = await RNQRGenerator.detect({
-        uri: sortedFilePaths[index],
-      });
+      const response = {values: ''};
+      // await RNQRGenerator.detect({
+      //   uri: sortedFilePaths[index],
+      // });
       const {values}: any = response; // Array of detected QR code values. Empty if nothing found.
       let timestampOfChange: string = sortedFilePaths[index]
         .split('_')[1]

@@ -1,11 +1,23 @@
 import axios from 'axios';
-const LOCAL_BEACON_URL = 'https://rrdemo.buzzybrains.net/api/beacon';
-const SAVE_FIND_VIDEO_HASH_URL = 'https://rrdemo.buzzybrains.net/api/saveHash';
+// const LOCAL_BEACON_URL = 'https://rrdemo.buzzybrains.net/api/beacon';
+// const SAVE_FIND_VIDEO_HASH_URL = 'https://rrdemo.buzzybrains.net/api/saveHash';
+// const SAVE_FIND_PHOTO_HASH_URL =
+//   'https://rrdemo.buzzybrains.net/api/savePhotoHash';
+// const NIST_BEACON_URL = 'https://beacon.nist.gov/beacon/2.0/pulse/time';
+// const GET_MY_VIDEOS_URL = 'https://rrdemo.buzzybrains.net/api/myvideos';
+// const GET_MY_PHOTOS_URL = 'https://rrdemo.buzzybrains.net/api/myphotos';
+
+const LOCAL_BEACON_URL =
+  'https://video-hash-272192025748.us-central1.run.app/api/beacon';
+const SAVE_FIND_VIDEO_HASH_URL =
+  'https://video-hash-272192025748.us-central1.run.app/api/saveHash';
 const SAVE_FIND_PHOTO_HASH_URL =
-  'https://rrdemo.buzzybrains.net/api/savePhotoHash';
+  'https://video-hash-272192025748.us-central1.run.app/api/savePhotoHash';
 const NIST_BEACON_URL = 'https://beacon.nist.gov/beacon/2.0/pulse/time';
-const GET_MY_VIDEOS_URL = 'https://rrdemo.buzzybrains.net/api/myvideos';
-const GET_MY_PHOTOS_URL = 'https://rrdemo.buzzybrains.net/api/myphotos';
+const GET_MY_VIDEOS_URL =
+  'https://video-hash-272192025748.us-central1.run.app/api/myvideos';
+const GET_MY_PHOTOS_URL =
+  'https://video-hash-272192025748.us-central1.run.app/api/myphotos';
 
 export const getLocalBeaconAPI = async () => {
   try {

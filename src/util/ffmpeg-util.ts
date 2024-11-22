@@ -1,6 +1,6 @@
 import {FFmpegKit, FFprobeKit} from 'ffmpeg-kit-react-native';
 import RNFS from 'react-native-fs';
-import RNQRGenerator from 'rn-qr-generator';
+// import RNQRGenerator from 'rn-qr-generator';
 import {findPhotoInfo, findVideoInfo} from '../service/hash-requests';
 
 export async function getVideoDuration(uri: string) {
@@ -96,9 +96,11 @@ export const extractSegmentFramesForQrcode = async (path: any) => {
 };
 
 export async function getPhotoInfoFromDb(uri: string) {
-  const response = await RNQRGenerator.detect({
-    uri,
-  });
+  const response = {values: ''};
+
+  // await RNQRGenerator.detect({
+  //   uri,
+  // });
   let {values}: any = response;
   if (values.length) {
     values = JSON.parse(values);
@@ -116,9 +118,11 @@ export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
   const firstFramePath = `${RNFS.CachesDirectoryPath}/first_frame.png`;
   const command = `-y -i ${uri} -vf "select=eq(n\\,0)" -q:v 2 -frames:v 1 ${firstFramePath}`;
   await FFmpegKit.execute(command);
-  const response = await RNQRGenerator.detect({
-    uri: firstFramePath,
-  });
+  const response = {values: ''};
+
+  // const response = await RNQRGenerator.detect({
+  //   uri: firstFramePath,
+  // });
   let {values}: any = response;
   console.log('values ' + values);
   if (values.length) {
