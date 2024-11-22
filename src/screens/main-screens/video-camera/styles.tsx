@@ -26,6 +26,13 @@ export default StyleSheet.create({
     borderRadius: 40,
     backgroundColor: '#CC0033',
   },
+  camera_button: {
+    padding: 15,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'gray',
+  },
   text: {
     fontSize: 18,
     color: 'white',
@@ -143,6 +150,52 @@ export default StyleSheet.create({
     backgroundColor: 'white',
     height: 32,
     width: 32,
+  },
+  toggleContainer: {
+    width: '100%',
+    position: 'absolute',
+    bottom: 140,
+    flexDirection: 'row',
+    display: 'flex',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+  },
+  toggleButton: {
+    width: 70,
+    height: 40,
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    borderRadius: 20,
+    backgroundColor: '#333',
+    alignItems: 'center',
+    opacity: 0.2,
+  },
+  activeButton: {
+    backgroundColor: 'blue',
+    opacity: 0.5,
+  },
+  toggleText: {
+    color: '#aaa',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  activeText: {
+    color: '#fff',
+  },
+  previewContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'black',
+  },
+  previewImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 

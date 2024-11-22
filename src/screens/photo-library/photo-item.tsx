@@ -1,6 +1,5 @@
 import React from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Image} from 'react-native';
-import Video from 'react-native-video';
+import {View, TouchableOpacity, StyleSheet, Image} from 'react-native';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {Alert} from 'react-native';
 

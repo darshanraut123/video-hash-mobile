@@ -1,6 +1,10 @@
 import axios from 'axios';
-const SIGNUPURL = 'https://rrdemo.buzzybrains.net/api/register';
-const LOGINAUTHURL = 'https://rrdemo.buzzybrains.net/api/login';
+// const SIGNUPURL = 'https://rrdemo.buzzybrains.net/api/register';
+// const LOGINAUTHURL = 'https://rrdemo.buzzybrains.net/api/login';
+const SIGNUPURL =
+  'https://video-hash-272192025748.us-central1.run.app/api/register';
+const LOGINAUTHURL =
+  'https://video-hash-272192025748.us-central1.run.app/api/login';
 
 export const authCheckAPI = async (token?: string, googleToken?: string) => {
   try {

@@ -116,6 +116,7 @@ export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
   const firstFramePath = `${RNFS.CachesDirectoryPath}/first_frame.png`;
   const command = `-y -i ${uri} -vf "select=eq(n\\,0)" -q:v 2 -frames:v 1 ${firstFramePath}`;
   await FFmpegKit.execute(command);
+
   const response = await RNQRGenerator.detect({
     uri: firstFramePath,
   });
@@ -207,8 +208,8 @@ export const embedQrCodesInVideo = async (
       .map((path: string) => `-i ${path}`)
       .join(
         ' ',
-      )} -filter_complex "${filterComplex}" -map [vfinal] -c:v mpeg4 -q:v 10 -c:a copy ${outputPath}`; // Use [vfinal] as output
-
+      )} -filter_complex "${filterComplex}" -map [vfinal] -map 0:a? -c:v mpeg4 -q:v 10 -c:a copy ${outputPath}`; // Use [vfinal] as output
+    //-map [vfinal] -c:v mpeg4 -q:v 10 -c:a copy
     const session = await FFmpegKit.execute(command);
 
     // Unique session id created for this execution

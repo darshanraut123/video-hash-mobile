@@ -33,8 +33,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "VideoHashTests.xctest"
-               BlueprintName = "VideoHashTests"
+               BuildableName = "RealityRegistryTests.xctest"
+               BlueprintName = "RealityRegistryTests"
                ReferencedContainer = "container:RealityRegistry.xcodeproj">
             </BuildableReference>
          </TestableReference>

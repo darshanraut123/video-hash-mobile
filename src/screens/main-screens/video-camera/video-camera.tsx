@@ -11,6 +11,7 @@ import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import timer from 'react-native-timer';
 import {Stopwatch} from 'react-native-stopwatch-timer';
 import {useIsFocused} from '@react-navigation/native';
+import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Toast from 'react-native-toast-message';
 import {
@@ -51,6 +52,8 @@ import CustomError from '../../../components/custom-error';
 import styles, {options} from './styles';
 import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
+import {Image} from 'react-native';
+import {ShareFile, useGetShare} from './useGetShare';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -83,16 +86,35 @@ export default function VideoCamera({navigation}: any) {
   const isFocused = useIsFocused();
   const isForeground = useIsForeground();
   const [isCameraActive, setCameraActive] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [activeMode, setActiveMode] = useState<'photo' | 'video'>('photo');
+  const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
+  const [isPreview, setIsPreview] = useState(false);
+  const files: ShareFile[] | undefined = useGetShare();
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
   }, [isRecording, isRecordingShared]);
 
   useEffect(() => {
+    if (files && files.length > 0) {
+      const file: ShareFile = files[0];
+      console.log(JSON.stringify(file));
+      if (file?.mimeType && file?.filePath) {
+        navigation.navigate(Paths.Verify, {
+          isPhoto: file.mimeType.includes('image'),
+          path: file.filePath,
+        });
+        console.log('NAVIGATED');
+      } else {
+        console.log('NOT NAVIGATED');
+      }
+    }
+  }, [files, navigation]);
+
+  useEffect(() => {
     console.log(isFocused, isForeground);
     setCameraActive(isFocused && isForeground);
-  }, [isFocused, isForeground]);
+  }, [isFocused, isForeground, navigation]);
 
   useEffect(() => {
     if (devices.length) {
@@ -195,9 +217,9 @@ export default function VideoCamera({navigation}: any) {
       const eachQrcode = {
         segmentNo: ++segmentNo.value,
         videoId: videoId.value,
-        segmentId: uuid.v4(),
-        nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-        localBeaconUniqueId: localBeacon.current?.uniqueValue,
+        // segmentId: uuid.v4(),
+        // nist: nistBeacon.current?.pulse.outputValue,
+        // localBeaconUniqueId: localBeacon.current?.uniqueValue,
       };
       setJsonObject(eachQrcode);
       setQrCodeData((prev: any) => {
@@ -546,11 +568,11 @@ export default function VideoCamera({navigation}: any) {
     setResetStopwatch(true);
   };
 
-  const handleTap = async () => {
+  const startStopRecording = async () => {
     if (isRecording) {
-      await stopRecording(); // Stop recording if it is in progress.
+      stopRecording(); // Stop recording if it is in progress.
     } else {
-      await takePhoto(); // Take a photo if not recording.
+      startRecording();
     }
   };
 
@@ -564,49 +586,67 @@ export default function VideoCamera({navigation}: any) {
       });
       console.log('Photo Captured', `Photo saved to: ${photo.path}`);
 
-      let photoHash: any = await generatePhashFromFrames([photo.path]);
-      photoHash = photoHash[0];
-      console.log(photoHash);
-      const photoId = uuid.v4();
-      const payloadInQrcode: any = {
-        photoId,
-        nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-        localBeaconUniqueId: localBeacon.current?.uniqueValue,
-      };
-      console.log(payloadInQrcode);
-
-      let qrCodePath: any = await saveQRCode([payloadInQrcode]);
-      qrCodePath = qrCodePath[0];
-      const path = await embedQrCodeInPhoto(photo.path, qrCodePath);
-      const deviceInfo: any = await fetchDeviceInfo();
-
-      const apiBody = {
-        photoId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        user: userRef.current,
-        photoHash,
-        publicData: {
-          path,
-          email: userRef.current.email,
-          name: userRef.current.name,
-          createdAt: new Date().toISOString(),
-        },
-        device: deviceInfo,
-        gps: {
-          latitude: locationRef.current?.latitude || 0,
-          longitude: locationRef.current?.longitude || 0,
-          altitude: locationRef.current?.altitude || 0,
-          timestamp: new Date().toISOString(),
-        },
-        nistRandom: {
-          nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-        },
-      };
-      await savePhotoHash(apiBody);
+      setCapturedPhoto(photo.path); // Set the captured photo path
+      setIsPreview(true); // Show the preview screen
     } catch (error) {
       console.error('Error taking photo:', error);
     }
+  };
+
+  const savePhoto = async () => {
+    try {
+      if (capturedPhoto) {
+        let photoHash: any = await generatePhashFromFrames([capturedPhoto]);
+        photoHash = photoHash[0];
+        console.log(photoHash);
+        const photoId = uuid.v4();
+        const payloadInQrcode: any = {
+          photoId,
+          nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
+          localBeaconUniqueId: localBeacon.current?.uniqueValue,
+        };
+        console.log(payloadInQrcode);
+
+        let qrCodePath: any = await saveQRCode([payloadInQrcode]);
+        qrCodePath = qrCodePath[0];
+        const path = await embedQrCodeInPhoto(capturedPhoto, qrCodePath);
+        const deviceInfo: any = await fetchDeviceInfo();
+
+        const apiBody = {
+          photoId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          user: userRef.current,
+          photoHash,
+          publicData: {
+            path,
+            email: userRef.current.email,
+            name: userRef.current.name,
+            createdAt: new Date().toISOString(),
+          },
+          device: deviceInfo,
+          gps: {
+            latitude: locationRef.current?.latitude || 0,
+            longitude: locationRef.current?.longitude || 0,
+            altitude: locationRef.current?.altitude || 0,
+            timestamp: new Date().toISOString(),
+          },
+          nistRandom: {
+            nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
+          },
+        };
+        await savePhotoHash(apiBody);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      discardPhoto();
+    }
+  };
+
+  const discardPhoto = () => {
+    setIsPreview(false);
+    setCapturedPhoto(null);
   };
 
   if (!device) {
@@ -633,119 +673,165 @@ export default function VideoCamera({navigation}: any) {
   return (
     <View style={styles.container}>
       <Canvas style={styles.canvasStyle} ref={canvasRef} />
-      <>
-        <Camera
-          ref={cameraRef}
-          style={StyleSheet.absoluteFill}
-          frameProcessor={frameProcessor} // Use the frame processor
-          device={device}
-          format={device?.formats[0]}
-          isActive={isCameraActive}
-          video={true}
-          audio={true}
-          photo={true}
-          photoQualityBalance="speed"
-          torch={isTorchOn ? 'on' : 'off'}
-          enableZoomGesture={true}
-          fps={30}
-          onTouchStart={handleFocus}
-          onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
-        />
 
-        <Text>{isLoaderActive}</Text>
-        <TouchableOpacity
-          style={styles.flashLightContainer}
-          onPress={() => setIsTorchOn(prev => !prev)}>
-          <MaterialIcons
-            name={'flashlight-on'}
-            size={25}
-            color={isTorchOn ? '#FFD700' : '#f4f3f4'}
+      {isPreview && capturedPhoto ? (
+        <View style={styles.previewContainer}>
+          <Image
+            source={{uri: 'file://' + capturedPhoto}}
+            style={styles.previewImage}
           />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.cameraSwicthContainer}
-          onPress={() =>
-            setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
-          }>
-          <MaterialIcons name={'cameraswitch'} size={25} color={'gainsboro'} />
-        </TouchableOpacity>
-
-        {isRecording && (
-          <View style={styles.stopwatchContainer}>
-            <Stopwatch
-              start={isStopwatchStart}
-              reset={resetStopwatch}
-              options={options}
-            />
-          </View>
-        )}
-        <View style={styles.absQrcodeContainer}>
-          <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
-          <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
-        </View>
-        {isRecording && (
-          <View style={styles.qrcodeContainer}>
-            <QRCode
-              backgroundColor="white"
-              value={JSON.stringify(jsonObject)}
-              size={80}
-              getRef={ref => (qrCodeRef.current = ref)}
-            />
-          </View>
-        )}
-        {isCameraInitialized && (
-          <View style={styles.buttonContainer}>
+          <View style={styles.toggleContainer}>
             <TouchableOpacity
-              onPress={handleTap}
-              onLongPress={startRecording}
-              delayLongPress={300}
-              style={
-                isRecording
-                  ? styles.stop_recording_button
-                  : styles.start_recording_button
-              }>
-              {isRecording ? (
-                <Icon name="stop" size={50} color="white" />
-              ) : (
-                <Icon name="camera-outline" size={50} color="white" />
-              )}
+              style={[styles.toggleButton, styles.activeButton]}
+              onPress={savePhoto}>
+              <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
-
-            {!isRecording && (
-              <TouchableOpacity
-                onPress={() => setIsExpanded(prev => !prev)}
-                style={styles.library_button_left}>
-                <Icon name="albums" size={40} color="#00ACc1" />
-
-                <>
-                  {isExpanded && (
-                    <View style={styles.subButtonsContainer}>
-                      <TouchableOpacity
-                        style={styles.subButtonLeft}
-                        onPress={() => navigation.navigate(Paths.VideoLibrary)}>
-                        <Icon name="videocam-outline" size={25} color="#00ACc1" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.subButtonRight}
-                        onPress={() => navigation.navigate(Paths.PhotoLibrary)}>
-                        <Icon name="image-outline" size={25} color="#00ACc1" />
-                      </TouchableOpacity>
-                    </View>
-                  )}
-                </>
-              </TouchableOpacity>
-            )}
-            {!isRecording && (
-              <TouchableOpacity
-                onPress={gotoVerify}
-                style={styles.library_button_right}>
-                <Icon name="finger-print" size={40} color="#00ACc1" />
-              </TouchableOpacity>
-            )}
-            <Toast />
+            <TouchableOpacity
+              style={[styles.toggleButton, styles.activeButton]}
+              onPress={discardPhoto}>
+              <Text style={styles.buttonText}>Discard</Text>
+            </TouchableOpacity>
           </View>
-        )}
-      </>
+        </View>
+      ) : (
+        <>
+          <Camera
+            ref={cameraRef}
+            style={StyleSheet.absoluteFill}
+            frameProcessor={frameProcessor} // Use the frame processor
+            device={device}
+            format={device?.formats[0]}
+            isActive={isCameraActive}
+            video={activeMode === 'video'}
+            audio={true}
+            photo={activeMode === 'photo'}
+            photoQualityBalance="speed"
+            torch={isTorchOn ? 'on' : 'off'}
+            enableZoomGesture={true}
+            fps={30}
+            onTouchStart={handleFocus}
+            onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
+          />
+
+          <Text>{isLoaderActive}</Text>
+          <TouchableOpacity
+            style={styles.flashLightContainer}
+            onPress={() => setIsTorchOn(prev => !prev)}>
+            <MaterialIcons
+              name={'flashlight-on'}
+              size={25}
+              color={isTorchOn ? '#FFD700' : '#f4f3f4'}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.cameraSwicthContainer}
+            onPress={() =>
+              setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
+            }>
+            <MaterialIcons
+              name={'cameraswitch'}
+              size={25}
+              color={'gainsboro'}
+            />
+          </TouchableOpacity>
+
+          {isRecording && (
+            <View style={styles.stopwatchContainer}>
+              <Stopwatch
+                start={isStopwatchStart}
+                reset={resetStopwatch}
+                options={options}
+              />
+            </View>
+          )}
+          <View style={styles.absQrcodeContainer}>
+            <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
+            <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
+          </View>
+          {isRecording && (
+            <View style={styles.qrcodeContainer}>
+              <QRCode
+                backgroundColor="white"
+                value={JSON.stringify(jsonObject)}
+                size={80}
+                getRef={ref => (qrCodeRef.current = ref)}
+              />
+            </View>
+          )}
+          {isCameraInitialized && (
+            <View style={styles.buttonContainer}>
+              {activeMode === 'photo' ? (
+                <TouchableOpacity
+                  onPress={takePhoto}
+                  style={styles.camera_button}>
+                  <Icon name="camera-outline" size={50} color="white" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={startStopRecording}
+                  style={
+                    isRecording
+                      ? styles.stop_recording_button
+                      : styles.start_recording_button
+                  }>
+                  {isRecording ? (
+                    <Icon name="stop" size={50} color="white" />
+                  ) : (
+                    <Icon name="videocam-outline" size={50} color="white" />
+                  )}
+                </TouchableOpacity>
+              )}
+
+              {!isRecording && (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate(Paths.VideoLibrary)}
+                  style={styles.library_button_left}>
+                  <Icon name="albums" size={40} color="#00ACc1" />
+                </TouchableOpacity>
+              )}
+              {!isRecording && (
+                <TouchableOpacity
+                  onPress={gotoVerify}
+                  style={styles.library_button_right}>
+                  <Icon name="finger-print" size={40} color="#00ACc1" />
+                </TouchableOpacity>
+              )}
+              <Toast />
+            </View>
+          )}
+          {/* Toggle Buttons */}
+          <View style={styles.toggleContainer}>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                activeMode === 'photo' && styles.activeButton,
+              ]}
+              onPress={() => setActiveMode('photo')}>
+              <Text
+                style={[
+                  styles.toggleText,
+                  activeMode === 'photo' && styles.activeText,
+                ]}>
+                Photo
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                activeMode === 'video' && styles.activeButton,
+              ]}
+              onPress={() => setActiveMode('video')}>
+              <Text
+                style={[
+                  styles.toggleText,
+                  activeMode === 'video' && styles.activeText,
+                ]}>
+                Video
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
     </View>
   );
 }

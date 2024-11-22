@@ -6,11 +6,13 @@ import Video from 'react-native-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Share from 'react-native-share';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
-import {getMyVideos} from '../../service/hash-requests';
+import {getMyPhotos, getMyVideos} from '../../service/hash-requests';
 import Toast from 'react-native-toast-message';
 import {Paths} from '../../navigation/path';
 import Loader from '../../components/loader';
 import CustomModal from '../../components/custom-modal';
+import PhotoList from '../photo-library/photo-list';
+import {Image} from 'react-native';
 
 interface VideoLibraryProps {
   navigation: NavigationProp<any>;
@@ -19,6 +21,10 @@ interface VideoLibraryProps {
 export interface VideoInterface {
   path: string;
   status: string;
+}
+
+export interface PhotoInterface {
+  path: string;
 }
 
 export interface modalDataI {
@@ -31,13 +37,73 @@ export interface modalDataI {
 
 const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
   const [videos, setVideos] = useState<VideoInterface[]>([]);
+  const [photos, setPhotos] = useState<PhotoInterface[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [infoModalVisible, setInfoModalVisible] = useState<modalDataI | null>(
     null,
   );
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [photoTabActive, setPhotoTabActive] = useState<boolean>(true);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   useEffect(() => {
+    const loadPhotos = async () => {
+      try {
+        setIsLoading(true);
+        let user: any = await AsyncStorage.getItem('user');
+        console.log('User: ' + user);
+        if (user) {
+          user = JSON.parse(user);
+          const responseData = await getMyPhotos(user.email);
+          if (!responseData) {
+            throw new Error('No data present');
+          }
+          console.log('responseData: ' + JSON.stringify(responseData));
+          const tasks: any = await AsyncStorage.getItem('TASK_QUEUE');
+          let parsedAsycStorageTasks: any = tasks ? JSON.parse(tasks) : [];
+          console.log(JSON.stringify(parsedAsycStorageTasks));
+
+          // Sorting function with type safety
+          parsedAsycStorageTasks = parsedAsycStorageTasks.sort(
+            (a: any, b: any): number => {
+              return (
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
+              );
+            },
+          );
+
+          console.log(parsedAsycStorageTasks);
+
+          const photoData: any = responseData.publicDataList.map(
+            (item: any) => {
+              return {...item, status: 'completed'};
+            },
+          );
+          console.log('photoData: ' + JSON.stringify(photoData));
+          setPhotos([...parsedAsycStorageTasks, ...photoData]);
+        } else {
+          Toast.show({
+            type: 'info',
+            text1: 'No photos found',
+            text2: 'Please click some photos 👋',
+            position: 'bottom',
+          });
+          setPhotos([]);
+        }
+      } catch (error) {
+        console.log('Error loading photos: ', error);
+        Toast.show({
+          type: 'info',
+          text1: 'No photos found',
+          text2: 'Please click some photos 👋',
+          position: 'bottom',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     const loadVideos = async () => {
       try {
         setIsLoading(true);
@@ -85,6 +151,8 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
         setIsLoading(false);
       }
     };
+
+    loadPhotos();
     loadVideos();
   }, []);
 
@@ -111,7 +179,6 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     <>
       <View style={styles.container}>
         <Toast />
-
         <CustomModal
           setInfoModalVisible={setInfoModalVisible}
           infoModalVisible={infoModalVisible}>
@@ -142,8 +209,7 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
             </View>
           </>
         </CustomModal>
-
-        {isLoading && <Loader loaderText="Loading your videos" />}
+        {isLoading && <Loader loaderText="Loading please wait..." />}
         <View style={styles.header}>
           <Text style={styles.headerText}>REALITY REGISTRY</Text>
           <View style={styles.headerIcons}>
@@ -154,14 +220,38 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
             </TouchableOpacity>
           </View>
         </View>
-
-        <Text style={styles.title}>Your Videos</Text>
-        <View style={{width: '100%'}}>
-          <VideoList
-            showVideoInfo={showVideoInfo}
-            videos={videos}
-            onSelectVideo={setSelectedVideo}
-          />
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            onPress={() => setPhotoTabActive(true)}
+            style={{
+              ...styles.tabs,
+              backgroundColor: photoTabActive ? '#008ae6' : 'gainsboro',
+            }}>
+            <Text style={styles.tabsTxt}>Photo</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setPhotoTabActive(false)}
+            style={{
+              ...styles.tabs,
+              backgroundColor: !photoTabActive ? '#008ae6' : 'gainsboro',
+            }}>
+            <Text style={styles.tabsTxt}>Video</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={{width: '100%', marginTop: 10}}>
+          {photoTabActive ? (
+            <PhotoList
+              showPhotoInfo={showVideoInfo}
+              photos={photos}
+              onSelectPhoto={setSelectedPhoto}
+            />
+          ) : (
+            <VideoList
+              showVideoInfo={showVideoInfo}
+              videos={videos}
+              onSelectVideo={setSelectedVideo}
+            />
+          )}
         </View>
         {selectedVideo && (
           <Modal visible={true} transparent={false}>
@@ -177,10 +267,35 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
                 <Icon name="close" size={24} color="white" />
               </TouchableOpacity>
               <Video
-                source={{uri: selectedVideo}}
+                source={{
+                  uri: selectedVideo,
+                  type: 'video/*',
+                }}
                 style={styles.fullScreenVideo}
                 resizeMode="contain"
                 controls={true}
+              />
+            </View>
+          </Modal>
+        )}
+
+        {selectedPhoto && (
+          <Modal visible={true} transparent={false}>
+            <View style={styles.videoPlayerContainer}>
+              <TouchableOpacity
+                onPress={() => shareVideo()}
+                style={[styles.closeButton, styles.shareBtn]}>
+                <Icon name="share-outline" size={24} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setSelectedPhoto(null)}
+                style={styles.closeButton}>
+                <Icon name="close" size={24} color="white" />
+              </TouchableOpacity>
+              <Image
+                source={{uri: 'file://' + selectedPhoto}}
+                style={styles.fullScreenVideo}
+                resizeMode="contain"
               />
             </View>
           </Modal>
@@ -197,10 +312,24 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
+  tabContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  tabs: {
+    width: '48%',
+    height: 50,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  tabsTxt: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '400',
+    letterSpacing: 3,
   },
   videoPlayerContainer: {
     flex: 1,

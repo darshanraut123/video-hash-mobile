@@ -58,7 +58,10 @@ const VideoItem: React.FC<VideoItemProps> = ({
       onPress={() => onSelect(uri)}>
       <View style={styles.thumbnailContainer}>
         <Video
-          source={{uri}}
+          source={{
+            uri,
+            type: 'video/*',
+          }}
           style={styles.thumbnail}
           resizeMode="cover"
           paused={true} // Pause for thumbnail display only

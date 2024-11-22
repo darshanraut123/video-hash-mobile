@@ -34,15 +34,17 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   const canvasRef = React.useRef<any>();
   let currentSegmentInfo: any = null;
   const {logout} = useAuth(); // Get login status from AuthContext
-  const {path} = route.params; // Extract path from route.params
+  const routeParams = route.params; // Extract path from route.params
 
   React.useEffect(() => {
-    if (path) {
-      console.log('path: ' + path);
-      verifyVideo('file://' + path); // Call verifyVideo when the component mounts or path changes
-      setUri('file://' + path);
+    if (routeParams?.path) {
+      console.log('path: ' + routeParams.path);
+      routeParams.isPhoto
+        ? verifyPhoto('file://' + routeParams.path)
+        : verifyVideo('file://' + routeParams.path); // Call verifyVideo when the component mounts or path changes
+      setUri('file://' + routeParams.path);
     }
-  }, [path]); // Dependency array ensures this runs only when `path` changes
+  }, [routeParams]); // Dependency array ensures this runs only when `path` changes
 
   const pickAndVerifyVideo = async () => {
     const res: any = await launchImageLibrary({mediaType: 'mixed'});
@@ -118,10 +120,9 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
       console.log(
         'videoInfoFromDB: ' + JSON.stringify(videoInfoFromDB.document),
       );
-      const verifyVideoDuration = await getVideoDuration(pickedUri);
-      const dbVideoDuration = parseFloat(
-        videoInfoFromDB.document.duration,
-      ).toFixed(1);
+      let verifyVideoDuration: number = await getVideoDuration(pickedUri);
+      verifyVideoDuration = Math.floor(verifyVideoDuration);
+      const dbVideoDuration = Math.floor(videoInfoFromDB.document.duration);
       console.log(
         `verifyVideoDuration: ${verifyVideoDuration} | dbVideoDuration: ${dbVideoDuration}`,
       );
@@ -355,7 +356,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
           currentSegmentInfo.timeStampseconds = timeStampseconds;
           videoSegmentInfoFromVerifyVideo.push(currentSegmentInfo);
           continue;
-        } else if (currentSegmentInfo.segmentId === qrcodeData.segmentId) {
+        } else if (currentSegmentInfo.segmentNo === qrcodeData.segmentNo) {
           continue;
         } else {
           console.log('QR code change found');
@@ -544,7 +545,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
               borderColor="gray"
             />
             <Text style={styles.confidenceTitle}>
-              Confidence Score:{' '}
+              Confidence Score:
               {Math.round(videoRecordFoundInfo?.averageDistance)}
             </Text>
 
