@@ -156,11 +156,13 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
         </View>
 
         <Text style={styles.title}>Your Videos</Text>
-        <VideoList
-          showVideoInfo={showVideoInfo}
-          videos={videos}
-          onSelectVideo={setSelectedVideo}
-        />
+        <View style={{width: '100%'}}>
+          <VideoList
+            showVideoInfo={showVideoInfo}
+            videos={videos}
+            onSelectVideo={setSelectedVideo}
+          />
+        </View>
         {selectedVideo && (
           <Modal visible={true} transparent={false}>
             <View style={styles.videoPlayerContainer}>

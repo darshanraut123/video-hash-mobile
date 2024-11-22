@@ -4,8 +4,8 @@ import VideoItem from './video-item';
 
 const {width} = Dimensions.get('window');
 const numColumns = 3;
-const itemPadding = 6;
-const extraRightMargin = 10;
+const itemPadding = 10;
+const extraRightMargin = 30;
 const itemWidth =
   (width - itemPadding * (numColumns + 1) - extraRightMargin) / numColumns;
 
