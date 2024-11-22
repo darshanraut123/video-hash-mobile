@@ -12,12 +12,10 @@ import {
   extractFirstFrameAndGetVideoInfoFromDB,
   extractSegmentFramesForPHash,
   extractSegmentFramesForQrcode,
+  getPhotoInfoFromDb,
   getVideoDuration,
 } from '../../../util/ffmpeg-util';
-import {
-  // calculateSegmentOverlap,
-  percentageMatch,
-} from '../../../util/common';
+import {calculateHammingDistance, percentageMatch} from '../../../util/common';
 import {useAuth} from '../../../components/auth-provider';
 import * as Progress from 'react-native-progress';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
@@ -26,6 +24,7 @@ import {Paths} from '../../../navigation/path';
 import Share from 'react-native-share';
 import Toast from 'react-native-toast-message';
 import styles from './style';
+import {Image} from 'react-native';
 
 const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
@@ -46,12 +45,60 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   }, [path]); // Dependency array ensures this runs only when `path` changes
 
   const pickAndVerifyVideo = async () => {
-    const res: any = await launchImageLibrary({mediaType: 'video'});
+    const res: any = await launchImageLibrary({mediaType: 'mixed'});
+    console.log(JSON.stringify(res.assets[0]));
     const pickedUri: any = res.assets[0].uri;
     console.log('pickedUri: ' + pickedUri);
-    verifyVideo(pickedUri); // Call verifyVideo when the component mounts or path changes
     setUri(pickedUri);
+
+    if (res.assets[0].type.includes('image')) {
+      verifyPhoto(pickedUri); // Call verifyVideo when the component mounts or path changes
+    } else {
+      verifyVideo(pickedUri); // Call verifyVideo when the component mounts or path changes
+    }
   };
+
+  async function verifyPhoto(localUri: string) {
+    setIsLoaderActive('Starting verification process');
+    const response = await getPhotoInfoFromDb(localUri);
+    let generatedPhash: any = await generatePhashFromFrames([localUri]);
+    generatedPhash = generatedPhash[0];
+    if (response && response.document && generatedPhash) {
+      const photoHash: string = response.document.photoHash;
+      console.log('photoHash ==> ' + JSON.stringify(photoHash));
+      console.log('generatedPhash ==> ' + JSON.stringify(generatedPhash));
+
+      const hammingDistanceLocal = calculateHammingDistance(
+        photoHash,
+        generatedPhash,
+      );
+      let percentageHammingDistance =
+        (hammingDistanceLocal / photoHash.length) * 100;
+      percentageHammingDistance = 100 - percentageHammingDistance;
+
+      setVideoRecordFoundInfo({
+        ...response.document,
+        averageDistance: percentageHammingDistance,
+      });
+      console.log(
+        JSON.stringify({...response.document, percentageHammingDistance}),
+      );
+      Toast.show({
+        type: 'success',
+        text1: 'Found a match',
+        text2: 'We found a matching record 👋',
+        position: 'bottom',
+      });
+    } else {
+      Toast.show({
+        type: 'info',
+        text1: 'Not found',
+        text2: 'No data found in records 👋',
+        position: 'bottom',
+      });
+    }
+    setIsLoaderActive(null);
+  }
 
   async function verifyVideo(pickedUri: string) {
     try {
@@ -246,7 +293,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         console.log(JSON.stringify({...response.document, averageDistance}));
         Toast.show({
           type: 'success',
-          text1: Math.round(videoRecordFoundInfo?.averageDistance) + ' % Match',
+          text1: 'Found a match',
           text2: 'We found a matching record 👋',
           position: 'bottom',
         });
@@ -460,12 +507,19 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         {videoRecordFoundInfo ? (
           <ScrollView>
             <View style={styles.imageContainer}>
-              <Video
-                source={{uri}}
-                style={styles.image}
-                resizeMode="cover"
-                paused={true} // Pause for thumbnail display only
-              />
+              {['.png', '.jpg', '.jpeg'].some(ext =>
+                uri.toLowerCase().endsWith(ext),
+              ) ? (
+                <Image source={{uri}} style={styles.image} resizeMode="cover" />
+              ) : (
+                <Video
+                  source={{uri}}
+                  style={styles.image}
+                  resizeMode="cover"
+                  paused={true} // Pause for thumbnail display only
+                />
+              )}
+
               <View
                 // eslint-disable-next-line react-native/no-inline-styles
                 style={{
@@ -514,12 +568,14 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
                   {videoRecordFoundInfo.user?.email}
                 </Text>
               </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Duration:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo.duration}
-                </Text>
-              </View>
+              {videoRecordFoundInfo?.duration && (
+                <View style={styles.tableRow}>
+                  <Text style={styles.tableLabel}>Duration:</Text>
+                  <Text style={styles.tableValue}>
+                    {videoRecordFoundInfo.duration}
+                  </Text>
+                </View>
+              )}
               <View style={styles.tableRow}>
                 <Text style={styles.tableLabel}>Latitude:</Text>
                 <Text style={styles.tableValue}>

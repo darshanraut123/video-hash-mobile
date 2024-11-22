@@ -21,7 +21,6 @@ export const fetchDeviceInfo = async () => {
       fontScale: await DeviceInfo.getFontScale(),
       bootloader: await DeviceInfo.getBootloader(),
       product: await DeviceInfo.getProduct(),
-      installerPackageName: await DeviceInfo.getInstallerPackageName(),
       device: await DeviceInfo.getDevice(),
       display: await DeviceInfo.getDisplay(),
       hardware: await DeviceInfo.getHardware(),

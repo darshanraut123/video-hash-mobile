@@ -5,5 +5,6 @@ export const enum Paths {
   Home = 'Home',
   VideoCamera = 'VideoCamera',
   Verify = 'Verify',
-  VideoLibrary  = 'VideoLibrary',
+  VideoLibrary = 'VideoLibrary',
+  PhotoLibrary = 'PhotoLibrary',
 }

@@ -1,7 +1,7 @@
 import {FFmpegKit, FFprobeKit} from 'ffmpeg-kit-react-native';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
-import {findVideoInfo} from '../service/hash-requests';
+import {findPhotoInfo, findVideoInfo} from '../service/hash-requests';
 
 export async function getVideoDuration(uri: string) {
   try {
@@ -95,6 +95,23 @@ export const extractSegmentFramesForQrcode = async (path: any) => {
   }
 };
 
+export async function getPhotoInfoFromDb(uri: string) {
+  const response = await RNQRGenerator.detect({
+    uri,
+  });
+  let {values}: any = response;
+  if (values.length) {
+    values = JSON.parse(values);
+    console.log('data ' + JSON.stringify(values));
+    const photoInfo = await findPhotoInfo(values?.photoId);
+    console.log('Returning info ' + photoInfo);
+    return photoInfo;
+  } else {
+    console.log('Returning null');
+    return null;
+  }
+}
+
 export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
   const firstFramePath = `${RNFS.CachesDirectoryPath}/first_frame.png`;
   const command = `-y -i ${uri} -vf "select=eq(n\\,0)" -q:v 2 -frames:v 1 ${firstFramePath}`;
@@ -147,3 +164,79 @@ export async function extractEveryFrameWithTimestamp(uri: string) {
 
   return sortedFilePaths;
 }
+
+export const embedQrCodesInVideo = async (
+  inputPath: string,
+  watermarkPaths: string[],
+) => {
+  try {
+    const fileName: any = inputPath.split('/').pop();
+    const outputPath = `${RNFS.CachesDirectoryPath}/$${
+      fileName.split('.')[0]
+    }_temp.mov`;
+
+    const overlayDuration = 5; // duration for each watermark in seconds
+
+    // Construct the filter_complex argument
+    const filterComplex =
+      watermarkPaths
+        .map((path: string, index: number) => {
+          const startTime = index * overlayDuration;
+          const endTime = startTime + overlayDuration;
+          const prevOverlay = index === 0 ? '[0:v]' : `[v${index}]`;
+          if (index < watermarkPaths.length - 1) {
+            // For all watermarks except the last, set their visibility duration
+            return `${prevOverlay}[${
+              index + 1
+            }:v] overlay=W-w-10:10:enable='between(t,${startTime},${endTime})'[v${
+              index + 1
+            }]`;
+          } else {
+            // For the last watermark, keep it visible until the end of the video
+            return `${prevOverlay}[${
+              index + 1
+            }:v] overlay=W-w-10:10:enable='between(t,${startTime},9999)'[v${
+              index + 1
+            }]`;
+          }
+        })
+        .join(';') + `; [v${watermarkPaths.length}] fps=fps=30 [vfinal]`; // Add fps filter
+
+    // FFmpeg command to convert the video
+    const command: string = `-r 30 -i ${inputPath} ${watermarkPaths
+      .map((path: string) => `-i ${path}`)
+      .join(
+        ' ',
+      )} -filter_complex "${filterComplex}" -map [vfinal] -c:v mpeg4 -q:v 10 -c:a copy ${outputPath}`; // Use [vfinal] as output
+
+    const session = await FFmpegKit.execute(command);
+
+    // Unique session id created for this execution
+    const sessionId = session.getSessionId();
+    console.log(`sessionId===> ${sessionId}`);
+
+    // Command arguments as a single string
+    const comd = session.getCommand();
+    console.log(`command===> ${comd}`);
+    // Delete the original file
+    await RNFS.unlink(inputPath);
+    // Rename the temporary file to replace the original file
+    await RNFS.moveFile(outputPath, inputPath);
+    console.log('File replaced successfully');
+    return inputPath;
+  } catch (error) {
+    console.error('FFmpeg command failed', error);
+  }
+};
+
+export const embedQrCodeInPhoto = async (
+  photoPath: string,
+  qrCodePath: string,
+) => {
+  const outputPath = `${RNFS.PicturesDirectoryPath}/photo_${Date.now()}.png`;
+  const command = `-y -i ${photoPath} -i ${qrCodePath} -filter_complex "overlay=W-w-10:10" ${outputPath}`;
+  const session = await FFmpegKit.execute(command);
+  const sessionId = session.getSessionId();
+  console.log(`sessionId===> ${sessionId}`);
+  return outputPath;
+};

@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import {StyleSheet} from 'react-native';
 
 export default StyleSheet.create({
   container: {
@@ -48,6 +48,34 @@ export default StyleSheet.create({
     height: 50,
     borderRadius: 25,
     backgroundColor: '#f0f0f0', // Customize button background color
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subButtonsContainer: {
+    bottom: 40,
+    width: 40,
+  },
+  subButtonLeft: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    position: 'absolute',
+    top: -50,
+    left: -30,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subButtonRight: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    position: 'absolute',
+    top: -50,
+    left: 30,
+    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -104,6 +132,7 @@ export default StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+
   zoomIcon: {
     display: 'flex',
     alignItems: 'center',
@@ -116,3 +145,17 @@ export default StyleSheet.create({
     width: 32,
   },
 });
+
+export const options = {
+  container: {
+    backgroundColor: '#000',
+    padding: 5,
+    borderRadius: 5,
+    width: 100,
+  },
+  text: {
+    fontSize: 20,
+    color: '#FFF',
+    marginLeft: 7,
+  },
+};

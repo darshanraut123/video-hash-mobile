@@ -20,20 +20,24 @@ import {
   CameraDevice,
   useFrameProcessor,
 } from 'react-native-vision-camera';
-import {FFmpegKit, FFmpegKitConfig} from 'ffmpeg-kit-react-native';
+import {FFmpegKitConfig} from 'ffmpeg-kit-react-native';
 import {
   getLocalBeaconAPI,
   getNistBeaconAPI,
+  savePhotoHash,
   saveVideoHash,
 } from '../../../service/hash-requests';
 import {Worklets, useSharedValue} from 'react-native-worklets-core';
 import pHash from '../../../util/phash';
-import Svg, {Path} from 'react-native-svg';
 import QrCodeComponent from '../../../components/qr-code';
 import RNFS from 'react-native-fs';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
-import {extractSegmentFramesForPHash} from '../../../util/ffmpeg-util';
+import {
+  embedQrCodeInPhoto,
+  embedQrCodesInVideo,
+  extractSegmentFramesForPHash,
+} from '../../../util/ffmpeg-util';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {Paths} from '../../../navigation/path';
 import {
@@ -44,7 +48,7 @@ import {
 } from '../../../util/queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomError from '../../../components/custom-error';
-import styles from './styles';
+import styles, {options} from './styles';
 import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
 
@@ -79,6 +83,7 @@ export default function VideoCamera({navigation}: any) {
   const isFocused = useIsFocused();
   const isForeground = useIsForeground();
   const [isCameraActive, setCameraActive] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
@@ -300,70 +305,6 @@ export default function VideoCamera({navigation}: any) {
     });
   };
 
-  const embedQrCodesInVideo = async (
-    inputPath: string,
-    watermarkPaths: string[],
-  ) => {
-    try {
-      const fileName: any = inputPath.split('/').pop();
-      const outputPath = `${RNFS.CachesDirectoryPath}/$${
-        fileName.split('.')[0]
-      }_temp.mov`;
-
-      const overlayDuration = 5; // duration for each watermark in seconds
-
-      // Construct the filter_complex argument
-      const filterComplex =
-        watermarkPaths
-          .map((path: string, index: number) => {
-            const startTime = index * overlayDuration;
-            const endTime = startTime + overlayDuration;
-            const prevOverlay = index === 0 ? '[0:v]' : `[v${index}]`;
-            if (index < watermarkPaths.length - 1) {
-              // For all watermarks except the last, set their visibility duration
-              return `${prevOverlay}[${
-                index + 1
-              }:v] overlay=W-w-10:10:enable='between(t,${startTime},${endTime})'[v${
-                index + 1
-              }]`;
-            } else {
-              // For the last watermark, keep it visible until the end of the video
-              return `${prevOverlay}[${
-                index + 1
-              }:v] overlay=W-w-10:10:enable='between(t,${startTime},9999)'[v${
-                index + 1
-              }]`;
-            }
-          })
-          .join(';') + `; [v${watermarkPaths.length}] fps=fps=30 [vfinal]`; // Add fps filter
-
-      // FFmpeg command to convert the video
-      const command: string = `-r 30 -i ${inputPath} ${watermarkPaths
-        .map((path: string) => `-i ${path}`)
-        .join(
-          ' ',
-        )} -filter_complex "${filterComplex}" -map [vfinal] -c:v mpeg4 -q:v 10 -c:a copy ${outputPath}`; // Use [vfinal] as output
-
-      const session = await FFmpegKit.execute(command);
-
-      // Unique session id created for this execution
-      const sessionId = session.getSessionId();
-      console.log(`sessionId===> ${sessionId}`);
-
-      // Command arguments as a single string
-      const comd = session.getCommand();
-      console.log(`command===> ${comd}`);
-      // Delete the original file
-      await RNFS.unlink(inputPath);
-      // Rename the temporary file to replace the original file
-      await RNFS.moveFile(outputPath, inputPath);
-      console.log('File replaced successfully');
-      return inputPath;
-    } catch (error) {
-      console.error('FFmpeg command failed', error);
-    }
-  };
-
   const saveQRCode = async (qrCodeDataLocal: any) => {
     return new Promise(async (resolve, reject) => {
       if (qrCodeDataLocal) {
@@ -383,7 +324,7 @@ export default function VideoCamera({navigation}: any) {
                   resolveInner(uri);
                 })
                 .catch(error => {
-                  console.log('Cannot detect QR code in image', error);
+                  console.log('Cannot generate QR code in image', error);
                 });
             });
           },
@@ -605,6 +546,69 @@ export default function VideoCamera({navigation}: any) {
     setResetStopwatch(true);
   };
 
+  const handleTap = async () => {
+    if (isRecording) {
+      await stopRecording(); // Stop recording if it is in progress.
+    } else {
+      await takePhoto(); // Take a photo if not recording.
+    }
+  };
+
+  const takePhoto = async () => {
+    if (!cameraRef.current) {
+      return;
+    }
+    try {
+      const photo = await cameraRef.current.takePhoto({
+        flash: 'off',
+      });
+      console.log('Photo Captured', `Photo saved to: ${photo.path}`);
+
+      let photoHash: any = await generatePhashFromFrames([photo.path]);
+      photoHash = photoHash[0];
+      console.log(photoHash);
+      const photoId = uuid.v4();
+      const payloadInQrcode: any = {
+        photoId,
+        nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
+        localBeaconUniqueId: localBeacon.current?.uniqueValue,
+      };
+      console.log(payloadInQrcode);
+
+      let qrCodePath: any = await saveQRCode([payloadInQrcode]);
+      qrCodePath = qrCodePath[0];
+      const path = await embedQrCodeInPhoto(photo.path, qrCodePath);
+      const deviceInfo: any = await fetchDeviceInfo();
+
+      const apiBody = {
+        photoId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        user: userRef.current,
+        photoHash,
+        publicData: {
+          path,
+          email: userRef.current.email,
+          name: userRef.current.name,
+          createdAt: new Date().toISOString(),
+        },
+        device: deviceInfo,
+        gps: {
+          latitude: locationRef.current?.latitude || 0,
+          longitude: locationRef.current?.longitude || 0,
+          altitude: locationRef.current?.altitude || 0,
+          timestamp: new Date().toISOString(),
+        },
+        nistRandom: {
+          nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
+        },
+      };
+      await savePhotoHash(apiBody);
+    } catch (error) {
+      console.error('Error taking photo:', error);
+    }
+  };
+
   if (!device) {
     return (
       <CustomError
@@ -639,6 +643,8 @@ export default function VideoCamera({navigation}: any) {
           isActive={isCameraActive}
           video={true}
           audio={true}
+          photo={true}
+          photoQualityBalance="speed"
           torch={isTorchOn ? 'on' : 'off'}
           enableZoomGesture={true}
           fps={30}
@@ -689,38 +695,44 @@ export default function VideoCamera({navigation}: any) {
         )}
         {isCameraInitialized && (
           <View style={styles.buttonContainer}>
-            {isRecording ? (
-              <TouchableOpacity
-                onPress={stopRecording}
-                style={styles.stop_recording_button}>
-                <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
-                  <Path
-                    fill="#1C274C"
-                    fillRule="evenodd"
-                    d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10ZM8.586 8.586C8 9.172 8 10.114 8 12c0 1.886 0 2.828.586 3.414C9.172 16 10.114 16 12 16c1.886 0 2.828 0 3.414-.586C16 14.828 16 13.886 16 12c0-1.886 0-2.828-.586-3.414C14.828 8 13.886 8 12 8c-1.886 0-2.828 0-3.414.586Z"
-                    clipRule="evenodd"
-                  />
-                </Svg>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={startRecording}
-                style={styles.start_recording_button}>
-                <Svg fill="none" stroke="#fff" viewBox="0 0 24 24">
-                  <Path
-                    fill="#1C274C"
-                    fillRule="evenodd"
-                    d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Zm-1.306-6.154 4.72-2.787c.781-.462.781-1.656 0-2.118l-4.72-2.787C9.934 7.706 9 8.29 9 9.214v5.573c0 .923.934 1.507 1.694 1.059Z"
-                    clipRule="evenodd"
-                  />
-                </Svg>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity
+              onPress={handleTap}
+              onLongPress={startRecording}
+              delayLongPress={300}
+              style={
+                isRecording
+                  ? styles.stop_recording_button
+                  : styles.start_recording_button
+              }>
+              {isRecording ? (
+                <Icon name="stop" size={50} color="white" />
+              ) : (
+                <Icon name="camera-outline" size={50} color="white" />
+              )}
+            </TouchableOpacity>
+
             {!isRecording && (
               <TouchableOpacity
-                onPress={() => navigation.navigate(Paths.VideoLibrary)}
+                onPress={() => setIsExpanded(prev => !prev)}
                 style={styles.library_button_left}>
-                <Icon name="image-outline" size={40} color="#00ACc1" />
+                <Icon name="albums" size={40} color="#00ACc1" />
+
+                <>
+                  {isExpanded && (
+                    <View style={styles.subButtonsContainer}>
+                      <TouchableOpacity
+                        style={styles.subButtonLeft}
+                        onPress={() => navigation.navigate(Paths.VideoLibrary)}>
+                        <Icon name="videocam-outline" size={25} color="#00ACc1" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.subButtonRight}
+                        onPress={() => navigation.navigate(Paths.PhotoLibrary)}>
+                        <Icon name="image-outline" size={25} color="#00ACc1" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
               </TouchableOpacity>
             )}
             {!isRecording && (
@@ -737,17 +749,3 @@ export default function VideoCamera({navigation}: any) {
     </View>
   );
 }
-
-const options = {
-  container: {
-    backgroundColor: '#000',
-    padding: 5,
-    borderRadius: 5,
-    width: 100,
-  },
-  text: {
-    fontSize: 20,
-    color: '#FFF',
-    marginLeft: 7,
-  },
-};
