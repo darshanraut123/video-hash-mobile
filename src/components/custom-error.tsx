@@ -1,6 +1,6 @@
 import React from 'react';
 import {View, Text, StyleSheet, Image} from 'react-native';
-import {nocamera, nopermissions} from '../assets/images/imageExports';
+import {nocamera, nopermissions} from '../assets/images/image-exports';
 
 interface NoCameraDeviceErrorI {
   imageName: string;

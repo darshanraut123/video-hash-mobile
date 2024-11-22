@@ -1,16 +1,16 @@
 import React, {useEffect, useState} from 'react';
 import {View, Text, TouchableOpacity, StyleSheet, Modal} from 'react-native';
 import {NavigationProp} from '@react-navigation/native';
-import VideoList from './VideoList';
+import VideoList from './video-list';
 import Video from 'react-native-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Share from 'react-native-share';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
-import {getMyVideos} from '../../service/hashrequests';
+import {getMyVideos} from '../../service/hash-requests';
 import Toast from 'react-native-toast-message';
 import {Paths} from '../../navigation/path';
 import Loader from '../../components/loader';
-import CustomModal from '../../components/customModal';
+import CustomModal from '../../components/custom-modal';
 
 interface VideoLibraryProps {
   navigation: NavigationProp<any>;
@@ -48,28 +48,28 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
           const responseData = await getMyVideos(user.email);
           console.log('responseData: ' + JSON.stringify(responseData));
           const tasks: any = await AsyncStorage.getItem('TASK_QUEUE');
-          const parsedTasks: any = tasks ? JSON.parse(tasks) : [];
-          const videoPaths: any = responseData.publicDataList.map(
-            (item: any) => {
-              const match = parsedTasks.find(
-                (obj: any) =>
-                  obj.path === item.path || obj.path === item.statusPath,
+          let parsedAsycStorageTasks: any = tasks ? JSON.parse(tasks) : [];
+          console.log(JSON.stringify(parsedAsycStorageTasks));
+
+          // Sorting function with type safety
+          parsedAsycStorageTasks = parsedAsycStorageTasks.sort(
+            (a: any, b: any): number => {
+              return (
+                new Date(b.createdAt).getTime() -
+                new Date(a.createdAt).getTime()
               );
-              console.log({
-                ...item,
-                status: match ? match.status : 'completed',
-              });
-              return {...item, status: match ? match.status : 'completed'};
             },
           );
-          console.log('videoPaths: ' + JSON.stringify(videoPaths));
-          Toast.show({
-            type: 'success',
-            text1: 'Showing your uploads',
-            text2: '👋',
-            position: 'bottom',
-          });
-          setVideos(videoPaths);
+
+          console.log(parsedAsycStorageTasks);
+
+          const videoData: any = responseData.publicDataList.map(
+            (item: any) => {
+              return {...item, status: 'completed'};
+            },
+          );
+          console.log('videoData: ' + JSON.stringify(videoData));
+          setVideos([...parsedAsycStorageTasks, ...videoData]);
         } else {
           Toast.show({
             type: 'info',

@@ -4,7 +4,7 @@ import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import {Paths} from './path';
 import VideoCamera from '../screens/main-screens/video-camera/video-camera';
 import Verify from '../screens/main-screens/verify-screen/verify-screen';
-import VideoLibrary from '../screens/video-library/VideoLibrary';
+import VideoLibrary from '../screens/video-library/video-library';
 
 const Stack = createNativeStackNavigator();
 
@@ -24,7 +24,7 @@ const HomeStack: React.FC<any> = ({navigation}) => {
       (error: any) => {
         console.log(error);
       },
-      'com.VideoHash', // share url protocol (must be unique to your app, suggest using your apple bundle id)
+      'com.RealityRegistry', // share url protocol (must be unique to your app, suggest using your apple bundle id)
     );
     return () => {
       ReceiveSharingIntent.clearReceivedFiles();

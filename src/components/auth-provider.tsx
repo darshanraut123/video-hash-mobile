@@ -1,6 +1,6 @@
 // src/context/AuthContext.ts
 import React, {createContext, useState, useContext, ReactNode} from 'react';
-import {loginAPI} from '../service/authrequests';
+import {loginAPI} from '../service/auth-requests';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {Alert} from 'react-native';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';

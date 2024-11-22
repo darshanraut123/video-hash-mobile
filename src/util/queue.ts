@@ -22,6 +22,13 @@ export async function updateTaskStatus(id: any, status: string) {
   await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(updatedTasks));
 }
 
+// Remove a task from the queue
+export async function removeCompletedTask(id: any) {
+  const tasks = await getTasksFromQueue();
+  const updatedTasks = tasks.filter((task: any) => task.id !== id);
+  await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(updatedTasks));
+}
+
 export async function resetTasksOnAppStart() {
   const tasks = await getTasksFromQueue();
   // On app start, reset any tasks marked as "inprogress" to "pending"

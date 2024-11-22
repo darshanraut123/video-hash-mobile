@@ -3,7 +3,7 @@ import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
-import {findVideoInfo} from '../../../service/hashrequests';
+import {findVideoInfo} from '../../../service/hash-requests';
 import Loader from '../../../components/loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../../../util/phash';
@@ -13,12 +13,12 @@ import {
   extractSegmentFramesForPHash,
   extractSegmentFramesForQrcode,
   getVideoDuration,
-} from '../../../util/ffmpegUtil';
+} from '../../../util/ffmpeg-util';
 import {
   // calculateSegmentOverlap,
   percentageMatch,
 } from '../../../util/common';
-import {useAuth} from '../../../components/authProvider';
+import {useAuth} from '../../../components/auth-provider';
 import * as Progress from 'react-native-progress';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 import Video from 'react-native-video';
@@ -47,16 +47,18 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
 
   const pickAndVerifyVideo = async () => {
     const res: any = await launchImageLibrary({mediaType: 'video'});
-    const uri: any = res.assets[0].uri;
-    console.log('uri: ' + uri);
-    verifyVideo(uri); // Call verifyVideo when the component mounts or path changes
-    setUri(uri);
+    const pickedUri: any = res.assets[0].uri;
+    console.log('pickedUri: ' + pickedUri);
+    verifyVideo(pickedUri); // Call verifyVideo when the component mounts or path changes
+    setUri(pickedUri);
   };
 
-  async function verifyVideo(uri: string) {
+  async function verifyVideo(pickedUri: string) {
     try {
       setVideoRecordFoundInfo(null);
-      let videoInfoFromDB = await extractFirstFrameAndGetVideoInfoFromDB(uri);
+      let videoInfoFromDB = await extractFirstFrameAndGetVideoInfoFromDB(
+        pickedUri,
+      );
       if (!videoInfoFromDB) {
         Toast.show({
           type: 'info',
@@ -69,7 +71,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
       console.log(
         'videoInfoFromDB: ' + JSON.stringify(videoInfoFromDB.document),
       );
-      const verifyVideoDuration = await getVideoDuration(uri);
+      const verifyVideoDuration = await getVideoDuration(pickedUri);
       const dbVideoDuration = parseFloat(
         videoInfoFromDB.document.duration,
       ).toFixed(1);
@@ -77,11 +79,11 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         `verifyVideoDuration: ${verifyVideoDuration} | dbVideoDuration: ${dbVideoDuration}`,
       );
       if (verifyVideoDuration === dbVideoDuration) {
-        await verifyNonTrimmedVideo(uri);
+        await verifyNonTrimmedVideo(pickedUri);
       } else {
         setIsLoaderActive('Starting verification process');
         await verifyTrimmedVideo({
-          uri,
+          pickedUri,
           videoInfoFromDB: videoInfoFromDB.document,
         });
       }
@@ -244,7 +246,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         console.log(JSON.stringify({...response.document, averageDistance}));
         Toast.show({
           type: 'success',
-          text1: averageDistance + ' % Match',
+          text1: Math.round(videoRecordFoundInfo?.averageDistance) + ' % Match',
           text2: 'We found a matching record 👋',
           position: 'bottom',
         });
@@ -307,7 +309,6 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
           videoSegmentInfoFromVerifyVideo.push(currentSegmentInfo);
           continue;
         } else if (currentSegmentInfo.segmentId === qrcodeData.segmentId) {
-          // console.log('Same segment id found, waiting for QR code to change');
           continue;
         } else {
           console.log('QR code change found');
@@ -474,7 +475,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
                   ),
                 }}>
                 <Text style={styles.confidenceText}>
-                  {videoRecordFoundInfo?.averageDistance}
+                  {Math.round(videoRecordFoundInfo?.averageDistance)}
                 </Text>
               </View>
               <TouchableOpacity style={styles.shareButton} onPress={shareVideo}>
@@ -483,13 +484,14 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
             </View>
 
             <Progress.Bar
-              progress={videoRecordFoundInfo?.averageDistance / 100}
+              progress={Math.round(videoRecordFoundInfo?.averageDistance / 100)}
               width={200}
               color={getColor(videoRecordFoundInfo?.averageDistance)}
               borderColor="gray"
             />
             <Text style={styles.confidenceTitle}>
-              Confidence Score: {videoRecordFoundInfo?.averageDistance}
+              Confidence Score:{' '}
+              {Math.round(videoRecordFoundInfo?.averageDistance)}
             </Text>
 
             {/* Metadata Table */}
@@ -519,14 +521,6 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
                 </Text>
               </View>
               <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Timestamp:</Text>
-                <Text style={styles.tableValue}>
-                  {new Date(
-                    videoRecordFoundInfo.cellTower.timestamp,
-                  ).toLocaleString()}
-                </Text>
-              </View>
-              <View style={styles.tableRow}>
                 <Text style={styles.tableLabel}>Latitude:</Text>
                 <Text style={styles.tableValue}>
                   {videoRecordFoundInfo.gps?.latitude}
@@ -544,18 +538,15 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
                   {videoRecordFoundInfo.gps.altitude}
                 </Text>
               </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Device ID:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo.device.appSpecificID}
-                </Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Segments count:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo.segments.length}
-                </Text>
-              </View>
+
+              {Object.keys(videoRecordFoundInfo.device).map((key: any) => (
+                <View key={key} style={styles.tableRow}>
+                  <Text style={styles.tableLabel}>{key}:</Text>
+                  <Text style={styles.tableValue}>
+                    {JSON.stringify(videoRecordFoundInfo.device[`${key}`])}
+                  </Text>
+                </View>
+              ))}
             </View>
             <View style={{height: 50}} />
           </ScrollView>

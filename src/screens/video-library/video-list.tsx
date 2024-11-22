@@ -1,6 +1,6 @@
 import React from 'react';
 import {FlatList, StyleSheet, Dimensions} from 'react-native';
-import VideoItem from './VideoItem';
+import VideoItem from './video-item';
 
 const {width} = Dimensions.get('window');
 const numColumns = 3;

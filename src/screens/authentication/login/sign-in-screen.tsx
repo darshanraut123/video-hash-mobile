@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import {Button} from 'react-native-elements';
 import {Paths} from '../../../navigation/path';
-import {useAuth} from '../../../components/authProvider';
+import {useAuth} from '../../../components/auth-provider';
 import Loader from '../../../components/loader';
-import OauthSignIn from '../../../components/oauthSignIn';
+import OauthSignIn from '../../../components/oauth-signIn';
 import Toast from 'react-native-toast-message';
 
 interface SignInScreenProps {

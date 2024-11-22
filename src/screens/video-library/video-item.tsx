@@ -2,10 +2,11 @@ import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
 import Video from 'react-native-video';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import {Alert} from 'react-native';
 
 interface VideoItemProps {
   uri: string;
-  videoInfo:any,
+  videoInfo: any;
   width: number;
   marginRight: number;
   marginBottom: number;
@@ -22,7 +23,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
   onSelect,
   status,
   showVideoInfo,
-  videoInfo
+  videoInfo,
 }) => {
   const statusIcon =
     status === 'completed'
@@ -36,6 +37,12 @@ const VideoItem: React.FC<VideoItemProps> = ({
       : status === 'pending'
       ? '#880808'
       : '#FFA500';
+
+  function handleShowVideoInfo() {
+    videoInfo.payload
+      ? Alert.alert('Please wait for processing to complete...')
+      : showVideoInfo(videoInfo);
+  }
 
   return (
     <TouchableOpacity
@@ -60,7 +67,7 @@ const VideoItem: React.FC<VideoItemProps> = ({
       <View style={styles.videoOverlay}>
         <Text style={styles.videoPlayText}>▶️</Text>
       </View>
-      <TouchableOpacity onPress={() => showVideoInfo(videoInfo)} style={styles.infoIcon}>
+      <TouchableOpacity onPress={handleShowVideoInfo} style={styles.infoIcon}>
         <MaterialIcons name={'info-outline'} size={20} color={'#FFFA'} />
       </TouchableOpacity>
       <View style={styles.statusIcon}>

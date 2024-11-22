@@ -24,7 +24,7 @@
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
-			remoteInfo = VideoHash;
+			remoteInfo = RealityRegistry;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -46,19 +46,19 @@
 		00E356EE1AD99517003FC87E /* VideoHashTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VideoHashTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		00E356F11AD99517003FC87E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		00E356F21AD99517003FC87E /* VideoHashTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VideoHashTests.m; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* VideoHash.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VideoHash.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = VideoHash/AppDelegate.h; sourceTree = "<group>"; };
-		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = VideoHash/AppDelegate.mm; sourceTree = "<group>"; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = VideoHash/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = VideoHash/Info.plist; sourceTree = "<group>"; };
-		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = VideoHash/main.m; sourceTree = "<group>"; };
-		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = VideoHash/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		1D54C589D3E6C1F165C4535C /* Pods-VideoHash-VideoHashTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoHash-VideoHashTests.debug.xcconfig"; path = "Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests.debug.xcconfig"; sourceTree = "<group>"; };
-		4B620D01C44E40008512E26B /* Pods-VideoHash-VideoHashTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoHash-VideoHashTests.release.xcconfig"; path = "Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests.release.xcconfig"; sourceTree = "<group>"; };
-		7A7CFD9E69DEB8356CADA813 /* Pods-VideoHash.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoHash.release.xcconfig"; path = "Target Support Files/Pods-VideoHash/Pods-VideoHash.release.xcconfig"; sourceTree = "<group>"; };
-		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = VideoHash/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		83183669D061B27127081E62 /* Pods-VideoHash.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-VideoHash.debug.xcconfig"; path = "Target Support Files/Pods-VideoHash/Pods-VideoHash.debug.xcconfig"; sourceTree = "<group>"; };
-		A1D6B8B4BFCBC4D8C4505F65 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = VideoHash/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		13B07F961A680F5B00A75B9A /* RealityRegistry.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RealityRegistry.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FAF1A68108700A75B9A /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = RealityRegistry/AppDelegate.h; sourceTree = "<group>"; };
+		13B07FB01A68108700A75B9A /* AppDelegate.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; name = AppDelegate.mm; path = RealityRegistry/AppDelegate.mm; sourceTree = "<group>"; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = RealityRegistry/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = RealityRegistry/Info.plist; sourceTree = "<group>"; };
+		13B07FB71A68108700A75B9A /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = main.m; path = RealityRegistry/main.m; sourceTree = "<group>"; };
+		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = RealityRegistry/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		1D54C589D3E6C1F165C4535C /* Pods-RealityRegistry-VideoHashTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RealityRegistry-VideoHashTests.debug.xcconfig"; path = "Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests.debug.xcconfig"; sourceTree = "<group>"; };
+		4B620D01C44E40008512E26B /* Pods-RealityRegistry-VideoHashTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RealityRegistry-VideoHashTests.release.xcconfig"; path = "Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests.release.xcconfig"; sourceTree = "<group>"; };
+		7A7CFD9E69DEB8356CADA813 /* Pods-RealityRegistry.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RealityRegistry.release.xcconfig"; path = "Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry.release.xcconfig"; sourceTree = "<group>"; };
+		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = RealityRegistry/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		83183669D061B27127081E62 /* Pods-RealityRegistry.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RealityRegistry.debug.xcconfig"; path = "Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry.debug.xcconfig"; sourceTree = "<group>"; };
+		A1D6B8B4BFCBC4D8C4505F65 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = RealityRegistry/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C2DCEF8BA1F0BD4DA05BF558 /* Pods_VideoHash.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_VideoHash.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA9DDFF73375C281A93A9BA2 /* Pods_VideoHash_VideoHashTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_VideoHash_VideoHashTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -101,7 +101,7 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		13B07FAE1A68108700A75B9A /* VideoHash */ = {
+		13B07FAE1A68108700A75B9A /* RealityRegistry */ = {
 			isa = PBXGroup;
 			children = (
 				13B07FAF1A68108700A75B9A /* AppDelegate.h */,
@@ -113,7 +113,7 @@
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
 				A1D6B8B4BFCBC4D8C4505F65 /* PrivacyInfo.xcprivacy */,
 			);
-			name = VideoHash;
+			name = RealityRegistry;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
@@ -136,7 +136,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* VideoHash */,
+				13B07FAE1A68108700A75B9A /* RealityRegistry */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* VideoHashTests */,
 				83CBBA001A601CBA00E9B192 /* Products */,
@@ -151,7 +151,7 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* VideoHash.app */,
+				13B07F961A680F5B00A75B9A /* RealityRegistry.app */,
 				00E356EE1AD99517003FC87E /* VideoHashTests.xctest */,
 			);
 			name = Products;
@@ -160,10 +160,10 @@
 		BBD78D7AC51CEA395F1C20DB /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				83183669D061B27127081E62 /* Pods-VideoHash.debug.xcconfig */,
-				7A7CFD9E69DEB8356CADA813 /* Pods-VideoHash.release.xcconfig */,
-				1D54C589D3E6C1F165C4535C /* Pods-VideoHash-VideoHashTests.debug.xcconfig */,
-				4B620D01C44E40008512E26B /* Pods-VideoHash-VideoHashTests.release.xcconfig */,
+				83183669D061B27127081E62 /* Pods-RealityRegistry.debug.xcconfig */,
+				7A7CFD9E69DEB8356CADA813 /* Pods-RealityRegistry.release.xcconfig */,
+				1D54C589D3E6C1F165C4535C /* Pods-RealityRegistry-VideoHashTests.debug.xcconfig */,
+				4B620D01C44E40008512E26B /* Pods-RealityRegistry-VideoHashTests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -192,9 +192,9 @@
 			productReference = 00E356EE1AD99517003FC87E /* VideoHashTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		13B07F861A680F5B00A75B9A /* VideoHash */ = {
+		13B07F861A680F5B00A75B9A /* RealityRegistry */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "VideoHash" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "RealityRegistry" */;
 			buildPhases = (
 				A909098DE9AC6BD61839803C /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
@@ -210,9 +210,9 @@
 			);
 			dependencies = (
 			);
-			name = VideoHash;
-			productName = VideoHash;
-			productReference = 13B07F961A680F5B00A75B9A /* VideoHash.app */;
+			name = RealityRegistry;
+			productName = RealityRegistry;
+			productReference = 13B07F961A680F5B00A75B9A /* RealityRegistry.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -233,7 +233,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "VideoHash" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "RealityRegistry" */;
 			compatibilityVersion = "Xcode 12.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -246,7 +246,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* VideoHash */,
+				13B07F861A680F5B00A75B9A /* RealityRegistry */,
 				00E356ED1AD99517003FC87E /* VideoHashTests */,
 			);
 		};
@@ -295,15 +295,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash/Pods-VideoHash-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash/Pods-VideoHash-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-VideoHash/Pods-VideoHash-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		4CCE481C1E1CC4154F129C83 /* [CP-User] [RNFB] Core Configuration */ = {
@@ -325,15 +325,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests-resources-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests-resources-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests-resources-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		83FB8335CB0D9E4EBB4EA523 /* [CP] Embed Pods Frameworks */ = {
@@ -342,15 +342,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash/Pods-VideoHash-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash/Pods-VideoHash-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-VideoHash/Pods-VideoHash-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry/Pods-RealityRegistry-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		905C96B978A59E0CB83FA513 /* [CP] Check Pods Manifest.lock */ = {
@@ -368,7 +368,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-VideoHash-VideoHashTests-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-RealityRegistry-VideoHashTests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -390,7 +390,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-VideoHash-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-RealityRegistry-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -403,15 +403,15 @@
 			files = (
 			);
 			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+				"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-VideoHash-VideoHashTests/Pods-VideoHash-VideoHashTests-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-RealityRegistry-VideoHashTests/Pods-RealityRegistry-VideoHashTests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -439,7 +439,7 @@
 /* Begin PBXTargetDependency section */
 		00E356F51AD99517003FC87E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 13B07F861A680F5B00A75B9A /* VideoHash */;
+			target = 13B07F861A680F5B00A75B9A /* RealityRegistry */;
 			targetProxy = 00E356F41AD99517003FC87E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -447,7 +447,7 @@
 /* Begin XCBuildConfiguration section */
 		00E356F61AD99517003FC87E /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 1D54C589D3E6C1F165C4535C /* Pods-VideoHash-VideoHashTests.debug.xcconfig */;
+			baseConfigurationReference = 1D54C589D3E6C1F165C4535C /* Pods-RealityRegistry-VideoHashTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				DEVELOPMENT_TEAM = PCJNZ3H872;
@@ -470,13 +470,13 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VideoHash.app/VideoHash";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RealityRegistry.app/RealityRegistry";
 			};
 			name = Debug;
 		};
 		00E356F71AD99517003FC87E /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 4B620D01C44E40008512E26B /* Pods-VideoHash-VideoHashTests.release.xcconfig */;
+			baseConfigurationReference = 4B620D01C44E40008512E26B /* Pods-RealityRegistry-VideoHashTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				COPY_PHASE_STRIP = NO;
@@ -496,13 +496,13 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/VideoHash.app/VideoHash";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/RealityRegistry.app/RealityRegistry";
 			};
 			name = Release;
 		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 83183669D061B27127081E62 /* Pods-VideoHash.debug.xcconfig */;
+			baseConfigurationReference = 83183669D061B27127081E62 /* Pods-RealityRegistry.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
@@ -512,7 +512,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_BITCODE = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				INFOPLIST_FILE = VideoHash/Info.plist;
+				INFOPLIST_FILE = RealityRegistry/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -525,7 +525,7 @@
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = VideoHash;
+				PRODUCT_NAME = RealityRegistry;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
@@ -534,7 +534,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 7A7CFD9E69DEB8356CADA813 /* Pods-VideoHash.release.xcconfig */;
+			baseConfigurationReference = 7A7CFD9E69DEB8356CADA813 /* Pods-RealityRegistry.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
@@ -543,7 +543,7 @@
 				DEVELOPMENT_TEAM = PCJNZ3H872;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				INFOPLIST_FILE = VideoHash/Info.plist;
+				INFOPLIST_FILE = RealityRegistry/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.video";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -556,7 +556,7 @@
 					"-lc++",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = "org.reactjs.native.example.$(PRODUCT_NAME:rfc1034identifier)";
-				PRODUCT_NAME = VideoHash;
+				PRODUCT_NAME = RealityRegistry;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
@@ -758,7 +758,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "VideoHash" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "RealityRegistry" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -767,7 +767,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "VideoHash" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "RealityRegistry" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,

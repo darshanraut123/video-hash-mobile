@@ -7,8 +7,8 @@ import {
   isSuccessResponse,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
-import {signUpAPI} from '../service/authrequests';
-import {useAuth} from './authProvider';
+import {signUpAPI} from '../service/auth-requests';
+import {useAuth} from './auth-provider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
 import {LoginManager, AccessToken} from 'react-native-fbsdk-next';

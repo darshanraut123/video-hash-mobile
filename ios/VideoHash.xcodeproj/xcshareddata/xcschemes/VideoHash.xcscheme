@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-               BuildableName = "VideoHash.app"
-               BlueprintName = "VideoHash"
-               ReferencedContainer = "container:VideoHash.xcodeproj">
+               BuildableName = "RealityRegistry.app"
+               BlueprintName = "RealityRegistry"
+               ReferencedContainer = "container:RealityRegistry.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -35,7 +35,7 @@
                BlueprintIdentifier = "00E356ED1AD99517003FC87E"
                BuildableName = "VideoHashTests.xctest"
                BlueprintName = "VideoHashTests"
-               ReferencedContainer = "container:VideoHash.xcodeproj">
+               ReferencedContainer = "container:RealityRegistry.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
@@ -55,9 +55,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "VideoHash.app"
-            BlueprintName = "VideoHash"
-            ReferencedContainer = "container:VideoHash.xcodeproj">
+            BuildableName = "RealityRegistry.app"
+            BlueprintName = "RealityRegistry"
+            ReferencedContainer = "container:RealityRegistry.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -72,9 +72,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "13B07F861A680F5B00A75B9A"
-            BuildableName = "VideoHash.app"
-            BlueprintName = "VideoHash"
-            ReferencedContainer = "container:VideoHash.xcodeproj">
+            BuildableName = "RealityRegistry.app"
+            BlueprintName = "RealityRegistry"
+            ReferencedContainer = "container:RealityRegistry.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

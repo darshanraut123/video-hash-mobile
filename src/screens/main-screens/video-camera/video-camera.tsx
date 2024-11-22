@@ -25,27 +25,28 @@ import {
   getLocalBeaconAPI,
   getNistBeaconAPI,
   saveVideoHash,
-} from '../../../service/hashrequests';
+} from '../../../service/hash-requests';
 import {Worklets, useSharedValue} from 'react-native-worklets-core';
 import pHash from '../../../util/phash';
 import Svg, {Path} from 'react-native-svg';
 import QrCodeComponent from '../../../components/qr-code';
 import RNFS from 'react-native-fs';
-import DeviceInfo from 'react-native-device-info';
 import Geolocation from 'react-native-geolocation-service';
 import RNQRGenerator from 'rn-qr-generator';
-import {extractSegmentFramesForPHash} from '../../../util/ffmpegUtil';
+import {extractSegmentFramesForPHash} from '../../../util/ffmpeg-util';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {Paths} from '../../../navigation/path';
 import {
   addTaskToQueue,
   getTasksFromQueue,
+  removeCompletedTask,
   updateTaskStatus,
 } from '../../../util/queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import CustomError from '../../../components/customError';
+import CustomError from '../../../components/custom-error';
 import styles from './styles';
-import {useIsForeground} from './useIsForeground';
+import {useIsForeground} from './use-is-foreground';
+import {fetchDeviceInfo} from '../../../util/device-info';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -107,15 +108,11 @@ export default function VideoCamera({navigation}: any) {
         await Camera.requestMicrophonePermission(); // For video capturing
       console.log('cameraPermission==> ' + cameraPermission);
       console.log('microphonePermission==> ' + microphonePermission);
-      setHasPermissions(
-        cameraPermission === 'granted' && microphonePermission === 'granted',
-      );
+
       if (Platform.OS === 'ios') {
         const auth = await Geolocation.requestAuthorization('whenInUse');
         console.log(auth);
-      }
-
-      if (Platform.OS === 'android') {
+      } else if (Platform.OS === 'android') {
         await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
@@ -125,6 +122,11 @@ export default function VideoCamera({navigation}: any) {
             position => {
               const {latitude, longitude, altitude} = position.coords;
               locationRef.current = {latitude, longitude, altitude};
+              setHasPermissions(
+                cameraPermission === 'granted' &&
+                  microphonePermission === 'granted' &&
+                  PermissionsAndroid.RESULTS.GRANTED === 'granted',
+              );
             },
             error => {
               console.error(error);
@@ -396,19 +398,17 @@ export default function VideoCamera({navigation}: any) {
 
   async function processNextTask() {
     if (isProcessing) {
-      // console.log('Waiting for pending task to finish');
       return;
     }
     isProcessing = true;
     const tasks = await getTasksFromQueue();
-    // console.log(`tasks length: ${tasks.length} tasks: ${JSON.stringify(tasks)}`);
     const nextTask = tasks.find((task: any) => task.status === 'pending');
     console.log(`nextTask: ${nextTask}`);
     if (nextTask) {
       try {
         await updateTaskStatus(nextTask.id, 'inprogress');
         await handleTask(nextTask.payload);
-        await updateTaskStatus(nextTask.id, 'completed');
+        await removeCompletedTask(nextTask.id);
         isProcessing = false;
       } catch (error) {
         console.error('Error processing task:', error);
@@ -416,41 +416,47 @@ export default function VideoCamera({navigation}: any) {
         isProcessing = false;
       }
     } else {
-      // console.log('No tasks present in queue');
       isProcessing = false;
     }
   }
 
   // Define the logic to handle tasks
-  async function handleTask(payload: any) {
+  async function handleTask(payload: any): Promise<void> {
     console.log('Handling task of payload:', payload);
-    // Task logic here, e.g., making an API call
-    await new Promise(async (resolve: any) => {
-      setIsLoaderActive('Generating QR codes...');
-      const qrCodePaths: any = await saveQRCode(payload.qrCodeData);
-      console.log('qrCodePaths ie watermark paths==> ' + qrCodePaths);
-      setIsLoaderActive('Embedding QR codes...');
-      let videoOutputPath: any = await embedQrCodesInVideo(
-        payload.path,
-        qrCodePaths,
-      );
-      console.log('Qrcode embeded video path==> ' + videoOutputPath);
-      setIsLoaderActive('Extracting frames for hashing...');
-      const segmentFramePaths: any = await extractSegmentFramesForPHash(
-        videoOutputPath,
-      );
-      console.log(
-        'extractedFramesPaths==> ' + JSON.stringify(segmentFramePaths),
-      );
-      setIsLoaderActive('Generating hashes...');
-      const pHashes: any = await generatePhashFromFrames(segmentFramePaths);
-      setIsLoaderActive('Getting video duration...');
-      const videoDuration = payload.duration;
-      setIsLoaderActive('Saving to records...');
-      saveToAPI({pHashes, videoDuration, videoOutputPath});
-      setIsLoaderActive(null);
-      console.log('resolved');
-      resolve();
+
+    return new Promise(async (resolve, reject) => {
+      try {
+        setIsLoaderActive('Generating QR codes...');
+        const qrCodePaths: any = await saveQRCode(payload.qrCodeData);
+        console.log('QR Code paths (watermark paths):', qrCodePaths);
+        setIsLoaderActive('Embedding QR codes...');
+        const videoOutputPath: any = await embedQrCodesInVideo(
+          payload.path,
+          qrCodePaths,
+        );
+        console.log('QR Code embedded video path:', videoOutputPath);
+        setIsLoaderActive('Extracting frames for hashing...');
+        const segmentFramePaths: any = await extractSegmentFramesForPHash(
+          videoOutputPath,
+        );
+        console.log(
+          'Extracted frames paths:',
+          JSON.stringify(segmentFramePaths),
+        );
+        setIsLoaderActive('Generating hashes...');
+        const pHashes: any = await generatePhashFromFrames(segmentFramePaths);
+        setIsLoaderActive('Getting video duration...');
+        const videoDuration = payload.duration;
+        setIsLoaderActive('Saving to records...');
+        await saveToAPI({pHashes, videoDuration, videoOutputPath});
+        setIsLoaderActive(null);
+        console.log('Task resolved successfully');
+        resolve();
+      } catch (error) {
+        console.error('Error in handling task:', error);
+        setIsLoaderActive(null); // Reset loader in case of an error
+        reject(error);
+      }
     });
   }
 
@@ -499,9 +505,7 @@ export default function VideoCamera({navigation}: any) {
   };
 
   const saveToAPI = async ({pHashes, videoDuration, videoOutputPath}: any) => {
-    const deviceId = await DeviceInfo.getUniqueId();
-    const carrierName = await DeviceInfo.getCarrier();
-    const ipAddress = await DeviceInfo.getIpAddress();
+    const deviceInfo: any = await fetchDeviceInfo();
     const segments = qrCodeDataRef.current.map(
       (qrCodeDataItem: any, index: number) => {
         return {
@@ -524,13 +528,7 @@ export default function VideoCamera({navigation}: any) {
         duration: videoDuration,
         createdAt: new Date().toISOString(),
       },
-      cellTower: {
-        timestamp: new Date().toISOString(),
-        network: {
-          carrierName,
-          ipAddress,
-        },
-      },
+      device: deviceInfo,
       gps: {
         latitude: locationRef.current?.latitude || 0,
         longitude: locationRef.current?.longitude || 0,
@@ -539,9 +537,6 @@ export default function VideoCamera({navigation}: any) {
       },
       nistRandom: {
         nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-      },
-      device: {
-        appSpecificID: deviceId,
       },
       segments,
     };

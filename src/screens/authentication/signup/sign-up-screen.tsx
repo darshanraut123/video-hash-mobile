@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import {Paths} from '../../../navigation/path';
 import CheckBoxIcon from 'react-native-elements/dist/checkbox/CheckBoxIcon';
-import {signUpAPI} from '../../../service/authrequests';
+import {signUpAPI} from '../../../service/auth-requests';
 import Loader from '../../../components/loader';
 
 interface SignUpScreenProps {
