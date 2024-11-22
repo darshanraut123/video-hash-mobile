@@ -246,7 +246,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         console.log(JSON.stringify({...response.document, averageDistance}));
         Toast.show({
           type: 'success',
-          text1: Math.round(videoRecordFoundInfo?.averageDistance) + ' % Match',
+          text1: 'Found a match',
           text2: 'We found a matching record 👋',
           position: 'bottom',
         });
