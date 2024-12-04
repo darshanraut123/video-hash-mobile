@@ -11,7 +11,6 @@ import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import timer from 'react-native-timer';
 import {Stopwatch} from 'react-native-stopwatch-timer';
 import {useIsFocused} from '@react-navigation/native';
-import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Toast from 'react-native-toast-message';
 import {
@@ -54,6 +53,7 @@ import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
 import {ShareFile, useGetShare} from './useGetShare';
+import LZString from 'lz-string';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -215,8 +215,8 @@ export default function VideoCamera({navigation}: any) {
         videoId.value = uuid.v4();
       }
       const eachQrcode = {
-        segmentNo: ++segmentNo.value,
-        videoId: videoId.value,
+        no: ++segmentNo.value,
+        id: videoId.value,
         // segmentId: uuid.v4(),
         // nist: nistBeacon.current?.pulse.outputValue,
         // localBeaconUniqueId: localBeacon.current?.uniqueValue,
@@ -335,8 +335,8 @@ export default function VideoCamera({navigation}: any) {
             return new Promise((resolveInner: any) => {
               RNQRGenerator.generate({
                 value: JSON.stringify(eachQrcodeData), // Data to encode in the QR code
-                height: 200, // Height of the QR code
-                width: 200, // Width of the QR code
+                height: 250, // Height of the QR code
+                width: 250, // Width of the QR code
                 correctionLevel: 'H', // Error correction level (H for high)
                 fileName: `qrcode_${index}`,
               })
@@ -601,9 +601,9 @@ export default function VideoCamera({navigation}: any) {
         console.log(photoHash);
         const photoId = uuid.v4();
         const payloadInQrcode: any = {
-          photoId,
-          nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-          localBeaconUniqueId: localBeacon.current?.uniqueValue,
+          id: photoId,
+          // nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
+          // localBeaconUniqueId: localBeacon.current?.uniqueValue,
         };
         console.log(payloadInQrcode);
 

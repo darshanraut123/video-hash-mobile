@@ -2,6 +2,7 @@ import {FFmpegKit, FFprobeKit} from 'ffmpeg-kit-react-native';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
 import {findPhotoInfo, findVideoInfo} from '../service/hash-requests';
+import LZString from 'lz-string';
 
 export async function getVideoDuration(uri: string) {
   try {
@@ -103,7 +104,7 @@ export async function getPhotoInfoFromDb(uri: string) {
   if (values.length) {
     values = JSON.parse(values);
     console.log('data ' + JSON.stringify(values));
-    const photoInfo = await findPhotoInfo(values?.photoId);
+    const photoInfo = await findPhotoInfo(values?.id);
     console.log('Returning info ' + photoInfo);
     return photoInfo;
   } else {
@@ -124,8 +125,8 @@ export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
   console.log('values ' + values);
   if (values.length) {
     values = JSON.parse(values);
-    console.log('videoId ' + values.videoId);
-    const videoInfo = await findVideoInfo(values?.videoId);
+    console.log('videoId ' + values?.id);
+    const videoInfo = await findVideoInfo(values?.id);
     console.log('Returning info ' + videoInfo);
     return videoInfo;
   } else {
@@ -189,14 +190,14 @@ export const embedQrCodesInVideo = async (
             // For all watermarks except the last, set their visibility duration
             return `${prevOverlay}[${
               index + 1
-            }:v] overlay=W-w-10:10:enable='between(t,${startTime},${endTime})'[v${
+            }:v] overlay=W-w-20:20:enable='between(t,${startTime},${endTime})'[v${
               index + 1
             }]`;
           } else {
             // For the last watermark, keep it visible until the end of the video
             return `${prevOverlay}[${
               index + 1
-            }:v] overlay=W-w-10:10:enable='between(t,${startTime},9999)'[v${
+            }:v] overlay=W-w-20:20:enable='between(t,${startTime},9999)'[v${
               index + 1
             }]`;
           }
@@ -235,7 +236,7 @@ export const embedQrCodeInPhoto = async (
   qrCodePath: string,
 ) => {
   const outputPath = `${RNFS.PicturesDirectoryPath}/photo_${Date.now()}.png`;
-  const command = `-y -i ${photoPath} -i ${qrCodePath} -filter_complex "overlay=W-w-10:10" ${outputPath}`;
+  const command = `-y -i ${photoPath} -i ${qrCodePath} -filter_complex "overlay=W-w-20:20" ${outputPath}`;
   const session = await FFmpegKit.execute(command);
   const sessionId = session.getSessionId();
   console.log(`sessionId===> ${sessionId}`);

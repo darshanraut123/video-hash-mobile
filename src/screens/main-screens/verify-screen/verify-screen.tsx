@@ -7,6 +7,7 @@ import {findVideoInfo} from '../../../service/hash-requests';
 import Loader from '../../../components/loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../../../util/phash';
+import LZString from 'lz-string';
 import {
   extractEveryFrameWithTimestamp,
   extractFirstFrameAndGetVideoInfoFromDB,
@@ -102,6 +103,11 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     setIsLoaderActive(null);
   }
 
+  function roundToNearest(value: number) {
+    // If the value has a decimal part >= 0.5, round up, else round down
+    return value % 1 >= 0.5 ? Math.ceil(value) : Math.floor(value);
+  }
+
   async function verifyVideo(pickedUri: string) {
     try {
       setVideoRecordFoundInfo(null);
@@ -121,8 +127,8 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         'videoInfoFromDB: ' + JSON.stringify(videoInfoFromDB.document),
       );
       let verifyVideoDuration: number = await getVideoDuration(pickedUri);
-      verifyVideoDuration = Math.floor(verifyVideoDuration);
-      const dbVideoDuration = Math.floor(videoInfoFromDB.document.duration);
+      verifyVideoDuration = roundToNearest(verifyVideoDuration);
+      const dbVideoDuration = roundToNearest(videoInfoFromDB.document.duration);
       console.log(
         `verifyVideoDuration: ${verifyVideoDuration} | dbVideoDuration: ${dbVideoDuration}`,
       );
@@ -260,10 +266,10 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         uri: verifycroppedframePaths[index],
       });
       const {values} = response; // Array of detected QR code values. Empty if nothing found.
-      console.log(values);
+      console.log('values: ' + JSON.stringify(values));
       if (values.length) {
         const decodedQrcode: any = JSON.parse(values[0]);
-        videoId = decodedQrcode.videoId;
+        videoId = decodedQrcode.id;
         break;
       }
     }
@@ -356,7 +362,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
           currentSegmentInfo.timeStampseconds = timeStampseconds;
           videoSegmentInfoFromVerifyVideo.push(currentSegmentInfo);
           continue;
-        } else if (currentSegmentInfo.segmentNo === qrcodeData.segmentNo) {
+        } else if (currentSegmentInfo.no === qrcodeData.no) {
           continue;
         } else {
           console.log('QR code change found');
@@ -402,7 +408,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     // Merge function
     const mergedFinalArray = videoSegmentsInfoFromDB.map((item1: any) => {
       const match = videoSegmentInfoFromVerifyVideo.find(
-        item2 => item2.segmentNo === item1.segmentNo,
+        item2 => item2.no === item1.no,
       );
 
       if (match) {

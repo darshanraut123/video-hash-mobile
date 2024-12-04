@@ -32,14 +32,14 @@ export function calculateSegmentOverlap(
   const segmentDuration = 5;
   return trimmedSegments.map((trimmedSegment: any) => {
     const originalSegment = originalSegments.find(
-      (seg: any) => seg.segmentNo === trimmedSegment.segmentNo,
+      (seg: any) => seg.no === trimmedSegment.no,
     );
 
     if (!originalSegment) {
       return {...trimmedSegment, presentSeconds: 0};
     }
 
-    const segmentStart = (trimmedSegment.segmentNo - 1) * segmentDuration;
+    const segmentStart = (trimmedSegment.no - 1) * segmentDuration;
     const trimmedStart = trimmedSegment.timeStampseconds || segmentStart;
     const overlapStart = Math.max(segmentStart, trimmedStart);
     const overlapEnd = Math.min(
@@ -49,7 +49,7 @@ export function calculateSegmentOverlap(
 
     const presentSeconds = Math.max(0, overlapEnd - overlapStart);
     console.log(
-      `Segment no: ${trimmedSegment.segmentNo}, Present Seconds: ${presentSeconds}`,
+      `Segment no: ${trimmedSegment.no}, Present Seconds: ${presentSeconds}`,
     );
 
     return {
