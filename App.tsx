@@ -5,8 +5,10 @@ import {AuthProvider} from './src/components/auth-provider';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {resetTasksOnAppStart} from './src/util/queue';
 import {StyleSheet} from 'react-native';
+import {useGetShare} from './src/screens/main-screens/video-camera/useGetShare';
 
 const App: React.FC = () => {
+  useGetShare();
   React.useEffect(() => {
     resetTasksOnAppStart();
     GoogleSignin.configure({

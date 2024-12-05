@@ -52,7 +52,6 @@ import styles, {options} from './styles';
 import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
-import {ShareFile, useGetShare} from './useGetShare';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -88,27 +87,10 @@ export default function VideoCamera({navigation}: any) {
   const [activeMode, setActiveMode] = useState<'photo' | 'video'>('photo');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
-  const files: ShareFile[] | undefined = useGetShare();
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
   }, [isRecording, isRecordingShared]);
-
-  useEffect(() => {
-    if (files && files.length > 0) {
-      const file: ShareFile = files[0];
-      console.log(JSON.stringify(file));
-      if (file?.mimeType && file?.filePath) {
-        navigation.navigate(Paths.Verify, {
-          isPhoto: file.mimeType.includes('image'),
-          path: file.filePath,
-        });
-        console.log('NAVIGATED');
-      } else {
-        console.log('NOT NAVIGATED');
-      }
-    }
-  }, [files, navigation]);
 
   useEffect(() => {
     console.log(isFocused, isForeground);
@@ -159,6 +141,28 @@ export default function VideoCamera({navigation}: any) {
             },
             {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
           );
+          async function getIntentToVerify() {
+            try {
+              let files: any = await AsyncStorage.getItem('intent');
+              console.log('Retrieved data:', files);
+              await AsyncStorage.removeItem('intent');
+              if (files) {
+                files = JSON.parse(files);
+                const file: any = files[0];
+                console.log(JSON.stringify(file));
+                if (file?.mimeType && file?.filePath) {
+                  navigation.navigate(Paths.Verify, {
+                    isPhoto: file.mimeType.includes('image'),
+                    path: file.filePath,
+                  });
+                  console.log('NAVIGATED TO VERIFY');
+                }
+              }
+            } catch (error) {
+              console.error('Error retrieving data:', error);
+            }
+          }
+          getIntentToVerify();
         }
       }
     };
@@ -365,7 +369,7 @@ export default function VideoCamera({navigation}: any) {
     isProcessing = true;
     const tasks = await getTasksFromQueue();
     const nextTask = tasks.find((task: any) => task.status === 'pending');
-    console.log(`nextTask: ${nextTask}`);
+    // console.log(`nextTask: ${nextTask}`);
     if (nextTask) {
       try {
         await updateTaskStatus(nextTask.id, 'inprogress');

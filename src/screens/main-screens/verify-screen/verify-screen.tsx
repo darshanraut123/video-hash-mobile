@@ -113,7 +113,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
       let videoInfoFromDB = await extractFirstFrameAndGetVideoInfoFromDB(
         pickedUri,
       );
-      if (!videoInfoFromDB) {
+      if (!videoInfoFromDB?.document) {
         Toast.show({
           type: 'info',
           text1: 'Not found',
