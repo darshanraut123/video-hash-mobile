@@ -53,7 +53,6 @@ import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
 import {ShareFile, useGetShare} from './useGetShare';
-import LZString from 'lz-string';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();

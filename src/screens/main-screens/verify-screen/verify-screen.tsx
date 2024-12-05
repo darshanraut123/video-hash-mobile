@@ -7,7 +7,6 @@ import {findVideoInfo} from '../../../service/hash-requests';
 import Loader from '../../../components/loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../../../util/phash';
-import LZString from 'lz-string';
 import {
   extractEveryFrameWithTimestamp,
   extractFirstFrameAndGetVideoInfoFromDB,

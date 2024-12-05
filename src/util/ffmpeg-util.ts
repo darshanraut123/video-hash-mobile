@@ -2,7 +2,6 @@ import {FFmpegKit, FFprobeKit} from 'ffmpeg-kit-react-native';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
 import {findPhotoInfo, findVideoInfo} from '../service/hash-requests';
-import LZString from 'lz-string';
 
 export async function getVideoDuration(uri: string) {
   try {
