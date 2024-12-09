@@ -4,7 +4,6 @@ import {
   PermissionsAndroid,
   GestureResponderEvent,
 } from 'react-native';
-import uuid from 'react-native-uuid';
 import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
@@ -20,7 +19,7 @@ import {
   CameraDevice,
   useFrameProcessor,
 } from 'react-native-vision-camera';
-import {FFmpegKitConfig} from 'ffmpeg-kit-react-native';
+import {FFmpegKitConfig, Level} from 'ffmpeg-kit-react-native';
 import {
   getLocalBeaconAPI,
   getNistBeaconAPI,
@@ -41,7 +40,6 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import {Paths} from '../../../navigation/path';
 import {
-  addTaskToQueue,
   getTasksFromQueue,
   removeCompletedTask,
   updateTaskStatus,
@@ -52,6 +50,8 @@ import styles, {options} from './styles';
 import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
+import {getUniqueId} from '../../../util/common';
+import Loader from '../../../components/loader';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -68,7 +68,6 @@ export default function VideoCamera({navigation}: any) {
   const locationRef = useRef<any>();
   const qrCodeRef = useRef<any>();
   const canvasRef = useRef<any>();
-  const canvasStegRef = useRef<any>(null);
   const nistBeacon = useRef<any>();
   const [qrCodeData, setQrCodeData] = useState<any>([]);
   const qrCodeDataRef = useRef<any>([]);
@@ -84,7 +83,7 @@ export default function VideoCamera({navigation}: any) {
   const isFocused = useIsFocused();
   const isForeground = useIsForeground();
   const [isCameraActive, setCameraActive] = useState(false);
-  const [activeMode, setActiveMode] = useState<'photo' | 'video'>('photo');
+  const [activeMode, setActiveMode] = useState<'photo' | 'video'>('video');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
 
@@ -169,6 +168,7 @@ export default function VideoCamera({navigation}: any) {
 
     FFmpegKitConfig.init()
       .then(() => {
+        FFmpegKitConfig.setLogLevel(Level.AV_LOG_QUIET);
         console.log('FFmpegKit Initialized');
       })
       .catch(error => {
@@ -215,7 +215,8 @@ export default function VideoCamera({navigation}: any) {
   const setQrCodes = Worklets.createRunOnJS(() => {
     try {
       if (!videoId.value) {
-        videoId.value = uuid.v4();
+        // videoId.value = uuid.v4();
+        videoId.value = getUniqueId();
       }
       const eachQrcode = {
         no: ++segmentNo.value,
@@ -392,16 +393,13 @@ export default function VideoCamera({navigation}: any) {
 
     return new Promise(async (resolve, reject) => {
       try {
-        setIsLoaderActive('Generating QR codes...');
         const qrCodePaths: any = await saveQRCode(payload.qrCodeData);
         console.log('QR Code paths (watermark paths):', qrCodePaths);
-        setIsLoaderActive('Embedding QR codes...');
         const videoOutputPath: any = await embedQrCodesInVideo(
           payload.path,
           qrCodePaths,
         );
         console.log('QR Code embedded video path:', videoOutputPath);
-        setIsLoaderActive('Extracting frames for hashing...');
         const segmentFramePaths: any = await extractSegmentFramesForPHash(
           videoOutputPath,
         );
@@ -409,18 +407,16 @@ export default function VideoCamera({navigation}: any) {
           'Extracted frames paths:',
           JSON.stringify(segmentFramePaths),
         );
-        setIsLoaderActive('Generating hashes...');
         const pHashes: any = await generatePhashFromFrames(segmentFramePaths);
-        setIsLoaderActive('Getting video duration...');
-        const videoDuration = payload.duration;
-        setIsLoaderActive('Saving to records...');
-        await saveToAPI({pHashes, videoDuration, videoOutputPath});
-        setIsLoaderActive(null);
+        await saveToAPI({
+          pHashes,
+          videoOutputPath,
+          payload,
+        });
         console.log('Task resolved successfully');
         resolve();
       } catch (error) {
         console.error('Error in handling task:', error);
-        setIsLoaderActive(null); // Reset loader in case of an error
         reject(error);
       }
     });
@@ -428,51 +424,57 @@ export default function VideoCamera({navigation}: any) {
 
   const startRecording = async () => {
     if (cameraRef.current && !isRecording) {
-      try {
-        lastFrameTimestamp.value = 0;
-        isRecordingShared.value = true;
-        setIsRecording(true);
-        handleStartStopwatch();
-        await cameraRef.current.startRecording({
-          onRecordingFinished: async (finishedVideo: VideoFile) => {
-            isRecordingShared.value = false;
-            setIsRecording(false);
-            handleResetStopwatch();
-            console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
-            const currentTime: any = Date.now();
-            const task = {
-              id: uuid.v4(),
-              type: 'video',
-              payload: {
-                qrCodeData: qrCodeDataRef.current,
-                duration: finishedVideo.duration,
-                path: `${RNFS.PicturesDirectoryPath}/video_${currentTime}.mov`,
-                statusPath: `${RNFS.PicturesDirectoryPath}/video_${currentTime}_temp.mov`,
-              },
-              status: 'pending',
-              createdAt: new Date().toISOString(),
-            };
-            await RNFS.copyFile(finishedVideo.path, task.payload.path);
-            addTaskToQueue(task);
-          },
-          onRecordingError: error => {
-            isRecordingShared.value = false;
-            setIsRecording(false);
-            console.error(error);
-            setIsLoaderActive(false);
-          },
-        });
-      } catch (error) {
-        console.error(error);
-        setIsRecording(false);
-        setIsLoaderActive(false);
-      }
+      lastFrameTimestamp.value = 0;
+      isRecordingShared.value = true;
+      setIsRecording(true);
+      handleStartStopwatch();
+      await cameraRef.current.startRecording({
+        onRecordingFinished: async (finishedVideo: VideoFile) => {
+          setIsLoaderActive('Saving...'); // Reset loader in case of an error
+          isRecordingShared.value = false;
+          setIsRecording(false);
+          handleResetStopwatch();
+          console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
+          const currentTime: any = Date.now();
+          const task = {
+            id: videoId.value,
+            type: 'video',
+            payload: {
+              videoId: videoId.value,
+              qrCodeData: qrCodeDataRef.current,
+              duration: finishedVideo.duration,
+              path: `${RNFS.PicturesDirectoryPath}/video_${currentTime}.mov`,
+            },
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+          };
+          await RNFS.copyFile(finishedVideo.path, task.payload.path);
+          const tasks = await getTasksFromQueue();
+          tasks.push(task);
+          await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(tasks));
+          setIsLoaderActive(null);
+          videoId.value = null;
+          qrCodeDataRef.current = [];
+          setQrCodeData([]);
+          segmentNo.value = 0;
+        },
+        onRecordingError: error => {
+          isRecordingShared.value = false;
+          setIsRecording(false);
+          console.error(error);
+          setIsLoaderActive(null);
+          videoId.value = null;
+          qrCodeDataRef.current = [];
+          setQrCodeData([]);
+          segmentNo.value = 0;
+        },
+      });
     }
   };
 
-  const saveToAPI = async ({pHashes, videoDuration, videoOutputPath}: any) => {
+  const saveToAPI = async ({pHashes, payload, videoOutputPath}: any) => {
     const deviceInfo: any = await fetchDeviceInfo();
-    const segments = qrCodeDataRef.current.map(
+    const segments = payload.qrCodeData.map(
       (qrCodeDataItem: any, index: number) => {
         return {
           ...qrCodeDataItem,
@@ -481,17 +483,17 @@ export default function VideoCamera({navigation}: any) {
       },
     );
     const apiBody = {
-      videoId: videoId.value,
+      videoId: payload.videoId,
       fullVideoHash: pHashes.join(''),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      duration: videoDuration,
+      duration: payload.duration,
       user: userRef.current,
       publicData: {
         path: videoOutputPath,
         email: userRef.current.email,
         name: userRef.current.name,
-        duration: videoDuration,
+        duration: payload.duration,
         createdAt: new Date().toISOString(),
       },
       device: deviceInfo,
@@ -602,7 +604,8 @@ export default function VideoCamera({navigation}: any) {
         let photoHash: any = await generatePhashFromFrames([capturedPhoto]);
         photoHash = photoHash[0];
         console.log(photoHash);
-        const photoId = uuid.v4();
+        const photoId = getUniqueId();
+        // const photoId = uuid.v4();
         const payloadInQrcode: any = {
           id: photoId,
           // nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
@@ -676,7 +679,7 @@ export default function VideoCamera({navigation}: any) {
   return (
     <View style={styles.container}>
       <Canvas style={styles.canvasStyle} ref={canvasRef} />
-
+      {isLoaderActive && <Loader subTxt="Saving..." />}
       {isPreview && capturedPhoto ? (
         <View style={styles.previewContainer}>
           <Image
@@ -716,7 +719,6 @@ export default function VideoCamera({navigation}: any) {
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
 
-          <Text>{isLoaderActive}</Text>
           <TouchableOpacity
             style={styles.flashLightContainer}
             onPress={() => setIsTorchOn(prev => !prev)}>
@@ -749,7 +751,6 @@ export default function VideoCamera({navigation}: any) {
           )}
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
-            <Canvas style={{backgroundColor: 'white'}} ref={canvasStegRef} />
           </View>
           {isRecording && (
             <View style={styles.qrcodeContainer}>

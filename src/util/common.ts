@@ -58,3 +58,7 @@ export function calculateSegmentOverlap(
     };
   });
 }
+
+export function getUniqueId() {
+  return Date.now() + Math.random().toFixed(0);
+}

@@ -43,7 +43,7 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     null,
   );
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [photoTabActive, setPhotoTabActive] = useState<boolean>(true);
+  const [photoTabActive, setPhotoTabActive] = useState<boolean>(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   useEffect(() => {
