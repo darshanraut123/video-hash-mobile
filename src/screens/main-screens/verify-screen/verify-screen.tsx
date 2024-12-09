@@ -48,7 +48,10 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
 
   const pickAndVerifyVideo = async () => {
     const res: any = await launchImageLibrary({mediaType: 'mixed'});
-    console.log(JSON.stringify(res.assets[0]));
+    if (!res) {
+      return;
+    }
+    console.log(res);
     const pickedUri: any = res.assets[0].uri;
     console.log('pickedUri: ' + pickedUri);
     setUri(pickedUri);
@@ -128,9 +131,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
       let verifyVideoDuration: number = await getVideoDuration(pickedUri);
       verifyVideoDuration = roundToNearest(verifyVideoDuration);
       const dbVideoDuration = roundToNearest(videoInfoFromDB.document.duration);
-      console.log(
-        `verifyVideoDuration: ${verifyVideoDuration} | dbVideoDuration: ${dbVideoDuration}`,
-      );
+      console.log(`pickedUri: ${pickedUri}`);
       if (verifyVideoDuration === dbVideoDuration) {
         await verifyNonTrimmedVideo(pickedUri);
       } else {
@@ -322,11 +323,13 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     }
   }
 
-  async function verifyTrimmedVideo({uri, videoInfoFromDB}: any) {
-    console.log('duration not same ie video is trimmed ' + uri);
+  async function verifyTrimmedVideo({pickedUri, videoInfoFromDB}: any) {
+    console.log('duration not same ie video is trimmed ' + pickedUri);
     const videoSegmentsInfoFromDB: any = videoInfoFromDB.segments;
     let videoSegmentInfoFromVerifyVideo: any[] = [];
-    const sortedFilePaths: string[] = await extractEveryFrameWithTimestamp(uri);
+    const sortedFilePaths: string[] = await extractEveryFrameWithTimestamp(
+      pickedUri,
+    );
     console.log('first ' + sortedFilePaths[0]);
     console.log(`last ${sortedFilePaths[sortedFilePaths.length - 1]}`);
     console.log('length ' + sortedFilePaths.length);
@@ -430,8 +433,9 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     // );
     // console.log(JSON.stringify(res));
     if (dbHashSegments.length === generatedHashes.length) {
+      console.log('videoInfoFromDB : ' + JSON.stringify(videoInfoFromDB));
       const averageDistance = percentageMatch(dbHashSegments, generatedHashes);
-      setVideoRecordFoundInfo(videoInfoFromDB);
+      setVideoRecordFoundInfo({...videoInfoFromDB, averageDistance});
       Toast.show({
         type: 'success',
         text1: averageDistance + ' % Match',
@@ -554,7 +558,6 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
               {Math.round(videoRecordFoundInfo?.averageDistance)}
             </Text>
 
-            {/* Metadata Table */}
             <View style={styles.tableContainer}>
               <View style={styles.tableRow}>
                 <Text style={styles.tableLabel}>Id:</Text>
