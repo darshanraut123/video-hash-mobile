@@ -1,5 +1,5 @@
 import React from 'react';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {SafeAreaProvider, SafeAreaView} from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/root-navigator';
 import {AuthProvider} from './src/components/auth-provider';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
@@ -18,11 +18,13 @@ const App: React.FC = () => {
     console.log('GoogleSignin configured');
   }, []);
   return (
-    <SafeAreaView style={styles.appContainer}>
-      <AuthProvider>
-        <AppNavigator />
-      </AuthProvider>
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.appContainer}>
+        <AuthProvider>
+          <AppNavigator />
+        </AuthProvider>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 };
 

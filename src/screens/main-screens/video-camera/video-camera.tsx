@@ -18,6 +18,7 @@ import {
   VideoFile,
   CameraDevice,
   useFrameProcessor,
+  useCameraFormat,
 } from 'react-native-vision-camera';
 import {FFmpegKitConfig, Level} from 'ffmpeg-kit-react-native';
 import {
@@ -50,8 +51,9 @@ import styles, {options} from './styles';
 import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
-import {getUniqueId} from '../../../util/common';
+import {getUniqueId, saveToCameraRoll} from '../../../util/common';
 import Loader from '../../../components/loader';
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -86,6 +88,10 @@ export default function VideoCamera({navigation}: any) {
   const [activeMode, setActiveMode] = useState<'photo' | 'video'>('video');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
+  const format = useCameraFormat(device, [
+    {fps: 30},
+    {videoResolution: {width: 1280, height: 720}},
+  ]);
 
   useEffect(() => {
     isRecordingShared.value = isRecording;
@@ -116,9 +122,47 @@ export default function VideoCamera({navigation}: any) {
       console.log('cameraPermission==> ' + cameraPermission);
       console.log('microphonePermission==> ' + microphonePermission);
 
+      async function getIntentToVerify() {
+        try {
+          let files: any = await AsyncStorage.getItem('intent');
+          console.log('Retrieved data:', files);
+          await AsyncStorage.removeItem('intent');
+          if (files) {
+            files = JSON.parse(files);
+            const file: any = files[0];
+            console.log(JSON.stringify(file));
+            if (file?.mimeType && file?.filePath) {
+              navigation.navigate(Paths.Verify, {
+                isPhoto: file.mimeType.includes('image'),
+                path: file.filePath,
+              });
+              console.log('NAVIGATED TO VERIFY');
+            }
+          }
+        } catch (error) {
+          console.error('Error retrieving data:', error);
+        }
+      }
+      getIntentToVerify();
+
       if (Platform.OS === 'ios') {
         const auth = await Geolocation.requestAuthorization('whenInUse');
-        console.log(auth);
+        console.log('auth: ' + auth);
+        Geolocation.getCurrentPosition(
+          position => {
+            const {latitude, longitude, altitude} = position.coords;
+            locationRef.current = {latitude, longitude, altitude};
+            setHasPermissions(
+              cameraPermission === 'granted' &&
+                microphonePermission === 'granted' &&
+                PermissionsAndroid.RESULTS.GRANTED === 'granted',
+            );
+          },
+          error => {
+            console.error(error);
+          },
+          {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
+        );
       } else if (Platform.OS === 'android') {
         await PermissionsAndroid.request(
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
@@ -140,35 +184,13 @@ export default function VideoCamera({navigation}: any) {
             },
             {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
           );
-          async function getIntentToVerify() {
-            try {
-              let files: any = await AsyncStorage.getItem('intent');
-              console.log('Retrieved data:', files);
-              await AsyncStorage.removeItem('intent');
-              if (files) {
-                files = JSON.parse(files);
-                const file: any = files[0];
-                console.log(JSON.stringify(file));
-                if (file?.mimeType && file?.filePath) {
-                  navigation.navigate(Paths.Verify, {
-                    isPhoto: file.mimeType.includes('image'),
-                    path: file.filePath,
-                  });
-                  console.log('NAVIGATED TO VERIFY');
-                }
-              }
-            } catch (error) {
-              console.error('Error retrieving data:', error);
-            }
-          }
-          getIntentToVerify();
         }
       }
     };
 
     FFmpegKitConfig.init()
       .then(() => {
-        FFmpegKitConfig.setLogLevel(Level.AV_LOG_QUIET);
+        FFmpegKitConfig.setLogLevel(Level.AV_LOG_DEBUG);
         console.log('FFmpegKit Initialized');
       })
       .catch(error => {
@@ -331,7 +353,7 @@ export default function VideoCamera({navigation}: any) {
     });
   };
 
-  const saveQRCode = async (qrCodeDataLocal: any) => {
+  const generateQRCode = async (qrCodeDataLocal: any) => {
     return new Promise(async (resolve, reject) => {
       if (qrCodeDataLocal) {
         const savePromises = qrCodeDataLocal.map(
@@ -393,13 +415,16 @@ export default function VideoCamera({navigation}: any) {
 
     return new Promise(async (resolve, reject) => {
       try {
-        const qrCodePaths: any = await saveQRCode(payload.qrCodeData);
+        const qrCodePaths: any = await generateQRCode(payload.qrCodeData);
         console.log('QR Code paths (watermark paths):', qrCodePaths);
         const videoOutputPath: any = await embedQrCodesInVideo(
           payload.path,
           qrCodePaths,
         );
         console.log('QR Code embedded video path:', videoOutputPath);
+        const uri = await saveToCameraRoll(videoOutputPath, 'video');
+        console.log('Final QR Code embedded video path:', uri);
+
         const segmentFramePaths: any = await extractSegmentFramesForPHash(
           videoOutputPath,
         );
@@ -413,6 +438,9 @@ export default function VideoCamera({navigation}: any) {
           videoOutputPath,
           payload,
         });
+        console.log('pHashes: ' + pHashes);
+        console.log('videoOutputPath: ' + videoOutputPath);
+        console.log('payload: ' + JSON.stringify(payload));
         console.log('Task resolved successfully');
         resolve();
       } catch (error) {
@@ -443,7 +471,11 @@ export default function VideoCamera({navigation}: any) {
               videoId: videoId.value,
               qrCodeData: qrCodeDataRef.current,
               duration: finishedVideo.duration,
-              path: `${RNFS.PicturesDirectoryPath}/video_${currentTime}.mov`,
+              path: `file://${
+                Platform.OS === 'ios'
+                  ? RNFS.LibraryDirectoryPath
+                  : RNFS.DocumentDirectoryPath
+              }/video_${currentTime}.mov`,
             },
             status: 'pending',
             createdAt: new Date().toISOString(),
@@ -452,6 +484,7 @@ export default function VideoCamera({navigation}: any) {
           const tasks = await getTasksFromQueue();
           tasks.push(task);
           await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(tasks));
+          console.log('Tasks queue updated');
           setIsLoaderActive(null);
           videoId.value = null;
           qrCodeDataRef.current = [];
@@ -541,9 +574,10 @@ export default function VideoCamera({navigation}: any) {
     const frameTimestamp = frame.timestamp;
     const recordingStatus = isRecordingShared.value;
 
+    // For Android ios
     // Convert frame timestamp to seconds
-    const frameTimestampInSeconds = frameTimestamp / 1e9;
-
+    const frameTimestampInSeconds =
+      Platform.OS === 'ios' ? frameTimestamp / 1e3 : frameTimestamp / 1e9; // Convert nanoseconds to seconds
     // Call setQrCodes() immediately for the first frame (0th second)
     if (lastFrameTimestamp.value === 0 && recordingStatus) {
       lastFrameTimestamp.value = frameTimestampInSeconds;
@@ -613,7 +647,7 @@ export default function VideoCamera({navigation}: any) {
         };
         console.log(payloadInQrcode);
 
-        let qrCodePath: any = await saveQRCode([payloadInQrcode]);
+        let qrCodePath: any = await generateQRCode([payloadInQrcode]);
         qrCodePath = qrCodePath[0];
         const path = await embedQrCodeInPhoto(capturedPhoto, qrCodePath);
         const deviceInfo: any = await fetchDeviceInfo();
@@ -642,6 +676,7 @@ export default function VideoCamera({navigation}: any) {
           },
         };
         await savePhotoHash(apiBody);
+        await saveToCameraRoll(path, 'photo');
       }
     } catch (error) {
       console.log(error);
@@ -704,9 +739,9 @@ export default function VideoCamera({navigation}: any) {
           <Camera
             ref={cameraRef}
             style={StyleSheet.absoluteFill}
+            format={format}
             frameProcessor={frameProcessor} // Use the frame processor
             device={device}
-            format={device?.formats[0]}
             isActive={isCameraActive}
             video={activeMode === 'video'}
             audio={true}

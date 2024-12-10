@@ -1378,10 +1378,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-image-resizer (1.4.5):
-    - React-Core
-  - react-native-qr-image-reader (1.0.5):
-    - React-Core
   - react-native-receive-sharing-intent (2.0.0):
     - React-Core
   - react-native-safe-area-context (4.11.0):
@@ -1429,8 +1425,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - react-native-view-shot (3.8.0):
-    - React-Core
   - react-native-webview (13.12.2):
     - DoubleConversion
     - glog
@@ -1756,15 +1750,6 @@ PODS:
   - RNGoogleSignin (13.1.0):
     - GoogleSignIn (~> 7.1)
     - React-Core
-  - RNImageCropPicker (0.41.2):
-    - React-Core
-    - React-RCTImage
-    - RNImageCropPicker/QBImagePickerController (= 0.41.2)
-    - TOCropViewController (~> 2.7.4)
-  - RNImageCropPicker/QBImagePickerController (0.41.2):
-    - React-Core
-    - React-RCTImage
-    - TOCropViewController (~> 2.7.4)
   - RNPermissions (4.1.5):
     - React-Core
   - RNQrGenerator (1.4.2):
@@ -1837,7 +1822,6 @@ PODS:
     - ReactCommon/turbomodule/core
     - Yoga
   - SocketRocket (0.7.0)
-  - TOCropViewController (2.7.4)
   - VisionCamera (4.5.3):
     - VisionCamera/Core (= 4.5.3)
     - VisionCamera/FrameProcessors (= 4.5.3)
@@ -1899,12 +1883,9 @@ DEPENDENCIES:
   - react-native-fbsdk-next (from `../node_modules/react-native-fbsdk-next`)
   - react-native-geolocation-service (from `../node_modules/react-native-geolocation-service`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
-  - react-native-image-resizer (from `../node_modules/react-native-image-resizer`)
-  - react-native-qr-image-reader (from `../node_modules/react-native-qr-image-reader`)
   - react-native-receive-sharing-intent (from `../node_modules/react-native-receive-sharing-intent`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-video (from `../node_modules/react-native-video`)
-  - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - react-native-webview (from `../node_modules/react-native-webview`)
   - react-native-worklets-core (from `../node_modules/react-native-worklets-core`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
@@ -1941,7 +1922,6 @@ DEPENDENCIES:
   - RNFS (from `../node_modules/react-native-fs`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
-  - RNImageCropPicker (from `../node_modules/react-native-image-crop-picker`)
   - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNQrGenerator (from `../node_modules/rn-qr-generator`)
   - RNScreens (from `../node_modules/react-native-screens`)
@@ -1950,7 +1930,6 @@ DEPENDENCIES:
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
   - VisionCamera (from `../node_modules/react-native-vision-camera`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
-  - ZXingObjC (~> 3.6.9)
 
 SPEC REPOS:
   trunk:
@@ -1975,7 +1954,6 @@ SPEC REPOS:
     - GTMSessionFetcher
     - RecaptchaInterop
     - SocketRocket
-    - TOCropViewController
     - ZXingObjC
 
 EXTERNAL SOURCES:
@@ -2062,18 +2040,12 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-geolocation-service"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
-  react-native-image-resizer:
-    :path: "../node_modules/react-native-image-resizer"
-  react-native-qr-image-reader:
-    :path: "../node_modules/react-native-qr-image-reader"
   react-native-receive-sharing-intent:
     :path: "../node_modules/react-native-receive-sharing-intent"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-video:
     :path: "../node_modules/react-native-video"
-  react-native-view-shot:
-    :path: "../node_modules/react-native-view-shot"
   react-native-webview:
     :path: "../node_modules/react-native-webview"
   react-native-worklets-core:
@@ -2146,8 +2118,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-gesture-handler"
   RNGoogleSignin:
     :path: "../node_modules/@react-native-google-signin/google-signin"
-  RNImageCropPicker:
-    :path: "../node_modules/react-native-image-crop-picker"
   RNPermissions:
     :path: "../node_modules/react-native-permissions"
   RNQrGenerator:
@@ -2226,12 +2196,9 @@ SPEC CHECKSUMS:
   react-native-fbsdk-next: de7d8792163c648b27ed853d0dab181cf928aa32
   react-native-geolocation-service: 608e1da71a1ac31b4de64d9ef2815f697978c55b
   react-native-image-picker: 5bd900eec966c8f9fe32c5ec844afcd71d052030
-  react-native-image-resizer: d9fb629a867335bdc13230ac2a58702bb8c8828f
-  react-native-qr-image-reader: e726001a081b025e03337451eda5fac720c65f11
   react-native-receive-sharing-intent: 62ab28c50e6ae56d32b9e841d7452091312a0bc7
   react-native-safe-area-context: 851c62c48dce80ccaa5637b6aa5991a1bc36eca9
   react-native-video: 2d2a323bade69f5e6969aed509e63f01311b8cd8
-  react-native-view-shot: 6b7ed61d77d88580fed10954d45fad0eb2d47688
   react-native-webview: 90edc35a70c053b9b44a07cdd0e22414d433f48c
   react-native-worklets-core: f51430dd07bf5343d4918d28a4bb00fe8f98b982
   React-nativeconfig: cd572c97f64676dcc2a1c88fc644b693b98408bf
@@ -2269,7 +2236,6 @@ SPEC CHECKSUMS:
   RNFS: 4ac0f0ea233904cb798630b3c077808c06931688
   RNGestureHandler: 5cf4d43fd8d31b236a6d8e392aa48432f01650aa
   RNGoogleSignin: 9e68b9bcc3888219357924e32ee563624745647d
-  RNImageCropPicker: 771e2ca319d2cf92e04ebf334ece892ee9a6728f
   RNPermissions: 294531ede5a64d1528463e88fffef05675842042
   RNQrGenerator: 5c12ab86443a07e923735800679da7b6fcaaeb31
   RNScreens: de55b9d7de8a017d1588dcb70415492d0b0597c2
@@ -2277,11 +2243,10 @@ SPEC CHECKSUMS:
   RNSVG: 4590aa95758149fa27c5c83e54a6a466349a1688
   RNVectorIcons: 7b81882e9c9369031aede0016dee0fe415cf2f43
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
-  TOCropViewController: 80b8985ad794298fb69d3341de183f33d1853654
   VisionCamera: 3b7cfecebbcb3871c4dd3fb47791b96a47fe5371
   Yoga: 33604ac44957ebe3f30f15b4cd0a3f96634e624a
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: 1fa31dc7c8011fad2acf0c9f59abda8fb5d97fc8
+PODFILE CHECKSUM: cbd32977c426bb9e8303ba89a82894b18294e8ca
 
 COCOAPODS: 1.15.2

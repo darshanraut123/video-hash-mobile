@@ -1,3 +1,5 @@
+import {CameraRoll} from '@react-native-camera-roll/camera-roll';
+
 export function calculateHammingDistance(str1: string, str2: string) {
   let distance = 0;
 
@@ -62,3 +64,17 @@ export function calculateSegmentOverlap(
 export function getUniqueId() {
   return Date.now() + Math.random().toFixed(0);
 }
+
+export const saveToCameraRoll = async (
+  filePath: string,
+  mediaType = 'video',
+) => {
+  try {
+    // Save to camera roll
+    const savedUri = await CameraRoll.save(filePath, {type: mediaType});
+    console.log('Success', `File saved to camera roll at: ${savedUri}`);
+    return savedUri;
+  } catch (error: any) {
+    console.error('Error saving to camera roll:', error.message);
+  }
+};

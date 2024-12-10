@@ -7,10 +7,12 @@ export default StyleSheet.create({
     backgroundColor: 'black',
   },
   buttonContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    marginBottom: 50,
+    display: 'flex',
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    position: 'absolute',
+    bottom: 50,
   },
   start_recording_button: {
     padding: 15,

@@ -30,9 +30,10 @@ export const extractSegmentFramesForPHash = async (path: any) => {
       await RNFS.unlink(file.path);
     }
 
-    const command = `-y -i ${path} -vf "select='not(mod(n\, 150))'" -vsync vfr ${
+    const command = `-y -i ${path} -vf "select='not(mod(n\, 150))'" -vsync vfr file://${
       RNFS.CachesDirectoryPath
     }/${Date.now()}finalframes%d.png`;
+    console.log('command: ' + command);
 
     const session = await FFmpegKit.execute(command);
     console.log('session' + session);
@@ -40,7 +41,7 @@ export const extractSegmentFramesForPHash = async (path: any) => {
     frameFiles = files.filter(file => {
       return file.name.includes('finalframes') && file.isFile();
     });
-    const unsorted = frameFiles.map(eachFile => eachFile.path);
+    const unsorted = frameFiles.map(eachFile => 'file://' + eachFile.path);
     // Sort the file paths based on the numeric suffix before .jpg
     const sortedFilePaths = unsorted.sort((a: any, b: any) => {
       const numA = parseInt(a.match(/finalframes(\d+)\.png/)[1], 10);
@@ -97,7 +98,7 @@ export const extractSegmentFramesForQrcode = async (path: any) => {
 
 export async function getPhotoInfoFromDb(uri: string) {
   const response = await RNQRGenerator.detect({
-    uri,
+    uri: 'file://' + uri,
   });
   let {values}: any = response;
   if (values.length) {
@@ -116,9 +117,8 @@ export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
   const firstFramePath = `${RNFS.CachesDirectoryPath}/first_frame.png`;
   const command = `-y -i ${uri} -vf "select=eq(n\\,0)" -q:v 2 -frames:v 1 ${firstFramePath}`;
   await FFmpegKit.execute(command);
-
   const response = await RNQRGenerator.detect({
-    uri: firstFramePath,
+    uri: 'file://' + firstFramePath,
   });
   let {values}: any = response;
   console.log('values ' + values);
@@ -126,7 +126,7 @@ export async function extractFirstFrameAndGetVideoInfoFromDB(uri: string) {
     values = JSON.parse(values);
     console.log('videoId ' + values?.id);
     const videoInfo = await findVideoInfo(values?.id);
-    console.log('Returning info ' + videoInfo);
+    console.log('Returning info ' + JSON.stringify(videoInfo));
     return videoInfo;
   } else {
     console.log('Returning null');
@@ -144,7 +144,7 @@ export async function extractEveryFrameWithTimestamp(uri: string) {
   for (const file of frameFiles) {
     await RNFS.unlink(file.path);
   }
-  const output = `${RNFS.CachesDirectoryPath}/everyframe_%0d.png`;
+  const output = `file://${RNFS.CachesDirectoryPath}/everyframe_%0d.png`;
   // const metadataFilePath = `${RNFS.CachesDirectoryPath}/frames_info.txt`;
   const command = `-y -i ${uri} -vsync 0 -frame_pts true ${output}`;
   await FFmpegKit.execute(command);
@@ -172,7 +172,7 @@ export const embedQrCodesInVideo = async (
 ) => {
   try {
     const fileName: any = inputPath.split('/').pop();
-    const outputPath = `${RNFS.CachesDirectoryPath}/$${
+    const outputPath = `file://${RNFS.CachesDirectoryPath}/$${
       fileName.split('.')[0]
     }_temp.mov`;
 
@@ -234,7 +234,9 @@ export const embedQrCodeInPhoto = async (
   photoPath: string,
   qrCodePath: string,
 ) => {
-  const outputPath = `${RNFS.PicturesDirectoryPath}/photo_${Date.now()}.png`;
+  const outputPath = `file://${
+    RNFS.CachesDirectoryPath
+  }/photo_${Date.now()}.png`;
   const command = `-y -i ${photoPath} -i ${qrCodePath} -filter_complex "overlay=W-w-20:20" ${outputPath}`;
   const session = await FFmpegKit.execute(command);
   const sessionId = session.getSessionId();

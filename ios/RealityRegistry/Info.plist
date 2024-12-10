@@ -4,6 +4,10 @@
 <dict>
 	<key>LSApplicationCategoryType</key>
 	<string></string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>We need access to save photos and videos to your camera roll.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need access to display your photos and videos.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>AntDesign.ttf</string>
