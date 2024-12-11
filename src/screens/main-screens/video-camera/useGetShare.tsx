@@ -30,7 +30,7 @@ export const useGetShare = () => {
         (error: any) => {
           console.error('Error receiving files:', error);
         },
-        'com.RealityRegistry',
+        'org.reactjs.native.example.RealityRegistry',
       );
     };
 

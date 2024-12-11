@@ -57,6 +57,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>com.googleusercontent.apps.589493241267-qq7vtdjcdin7ja8vn4kcb528n5h3dim8</string>
+				<string>org.reactjs.native.example.RealityRegistry</string>
 			</array>
 		</dict>
 	</array>
