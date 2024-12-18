@@ -792,7 +792,7 @@ export default function VideoCamera({navigation}: any) {
               <QRCode
                 backgroundColor="white"
                 value={JSON.stringify(jsonObject)}
-                size={80}
+                size={120}
                 getRef={ref => (qrCodeRef.current = ref)}
               />
             </View>

@@ -13,6 +13,7 @@ import Loader from '../../components/loader';
 import CustomModal from '../../components/custom-modal';
 import PhotoList from '../photo-library/photo-list';
 import {Image} from 'react-native';
+import VideoPlayer from 'react-native-video-controls';
 
 interface VideoLibraryProps {
   navigation: NavigationProp<any>;
@@ -104,18 +105,18 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
       }
     };
 
-    const loadVideos = async () => {
+    const loadVideos = async (showLoader = true) => {
       try {
-        setIsLoading(true);
+        showLoader && setIsLoading(true);
         let user: any = await AsyncStorage.getItem('user');
-        console.log('User: ' + user);
+        // console.log('User: ' + user);
         if (user) {
           user = JSON.parse(user);
           const responseData = await getMyVideos(user.email);
-          console.log('responseData: ' + JSON.stringify(responseData));
+          // console.log('responseData: ' + JSON.stringify(responseData));
           const tasks: any = await AsyncStorage.getItem('TASK_QUEUE');
           let parsedAsycStorageTasks: any = tasks ? JSON.parse(tasks) : [];
-          console.log(JSON.stringify(parsedAsycStorageTasks));
+          // console.log(JSON.stringify(parsedAsycStorageTasks));
 
           // Sorting function with type safety
           parsedAsycStorageTasks = parsedAsycStorageTasks.sort(
@@ -127,14 +128,14 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
             },
           );
 
-          console.log(parsedAsycStorageTasks);
+          // console.log(parsedAsycStorageTasks);
 
           const videoData: any = responseData.publicDataList.map(
             (item: any) => {
               return {...item, status: 'completed'};
             },
           );
-          console.log('videoData: ' + JSON.stringify(videoData));
+          // console.log('videoData: ' + JSON.stringify(videoData));
           setVideos([...parsedAsycStorageTasks, ...videoData]);
         } else {
           Toast.show({
@@ -153,7 +154,13 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     };
 
     loadPhotos();
-    loadVideos();
+    loadVideos(true);
+
+    const loadVideosTimer = setInterval(() => {
+      loadVideos(false);
+    }, 6000);
+
+    return () => clearInterval(loadVideosTimer);
   }, []);
 
   const showVideoInfo = (ModalInfo: modalDataI) => {
@@ -266,14 +273,21 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
                 style={styles.closeButton}>
                 <Icon name="close" size={24} color="white" />
               </TouchableOpacity>
-              <Video
+              {/* <Video
                 source={{
                   uri: selectedVideo,
                   type: 'video/*',
                 }}
                 style={styles.fullScreenVideo}
                 resizeMode="contain"
-                controls={true}
+                controls={false}
+              /> */}
+              <VideoPlayer
+                source={{uri: selectedVideo}}
+                style={styles.fullScreenVideo}
+                disableFullscreen
+                disableVolume
+                disableBack
               />
             </View>
           </Modal>
