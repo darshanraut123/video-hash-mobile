@@ -6,6 +6,7 @@ import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import {resetTasksOnAppStart} from './src/util/queue';
 import {StyleSheet} from 'react-native';
 import {useGetShare} from './src/screens/main-screens/video-camera/useGetShare';
+import TaskRunner from './task-runner';
 
 const App: React.FC = () => {
   useGetShare();
@@ -21,6 +22,7 @@ const App: React.FC = () => {
     <SafeAreaProvider>
       <SafeAreaView style={styles.appContainer}>
         <AuthProvider>
+          <TaskRunner />
           <AppNavigator />
         </AuthProvider>
       </SafeAreaView>

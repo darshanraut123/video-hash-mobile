@@ -263,7 +263,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
 
     for (let index = 0; index < verifycroppedframePaths.length; index++) {
       const response = await RNQRGenerator.detect({
-        uri: 'file://'+verifycroppedframePaths[index],
+        uri: 'file://' + verifycroppedframePaths[index],
       });
       const {values} = response; // Array of detected QR code values. Empty if nothing found.
       console.log('values: ' + JSON.stringify(values));
@@ -337,7 +337,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     setIsLoaderActive('Extracting QR codes');
     for (let index = 0; index < sortedFilePaths.length; index++) {
       const response = await RNQRGenerator.detect({
-        uri: 'file://'+sortedFilePaths[index],
+        uri: 'file://' + sortedFilePaths[index],
       });
       const {values}: any = response; // Array of detected QR code values. Empty if nothing found.
       let timestampOfChange: string = sortedFilePaths[index]
@@ -489,7 +489,13 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
 
       <View style={styles.container}>
         <Canvas
-          style={{backgroundColor: 'white', height: 32, width: 32}}
+          // eslint-disable-next-line react-native/no-inline-styles
+          style={{
+            backgroundColor: 'white',
+            height: 32,
+            width: 32,
+            position: 'absolute',
+          }}
           ref={canvasRef}
         />
         {/* Header */}

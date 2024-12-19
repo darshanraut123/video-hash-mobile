@@ -25,7 +25,6 @@ import {
   getLocalBeaconAPI,
   getNistBeaconAPI,
   savePhotoHash,
-  saveVideoHash,
 } from '../../../service/hash-requests';
 import {Worklets, useSharedValue} from 'react-native-worklets-core';
 import pHash from '../../../util/phash';
@@ -42,7 +41,6 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {Paths} from '../../../navigation/path';
 import {
   getTasksFromQueue,
-  removeCompletedTask,
   updateTaskStatus,
 } from '../../../util/queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -53,7 +51,7 @@ import {fetchDeviceInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
 import {getUniqueId, saveToCameraRoll} from '../../../util/common';
 import Loader from '../../../components/loader';
-import {CameraRoll} from '@react-native-camera-roll/camera-roll';
+import eventEmitter from '../../../util/event-emitter';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -79,7 +77,6 @@ export default function VideoCamera({navigation}: any) {
   const lastFrameTimestamp = useSharedValue(0);
   const segmentNo = useSharedValue(0);
   const videoId = useSharedValue<any>(null);
-  let isProcessing = false;
   let localBeacon = useRef<any>(null);
   let userRef = useRef<any>(null);
   const isFocused = useIsFocused();
@@ -190,7 +187,7 @@ export default function VideoCamera({navigation}: any) {
 
     FFmpegKitConfig.init()
       .then(() => {
-        FFmpegKitConfig.setLogLevel(Level.AV_LOG_DEBUG);
+        FFmpegKitConfig.setLogLevel(Level.AV_LOG_INFO);
         console.log('FFmpegKit Initialized');
       })
       .catch(error => {
@@ -386,31 +383,37 @@ export default function VideoCamera({navigation}: any) {
   };
 
   async function processNextTask() {
+    let isProcessing = await AsyncStorage.getItem('isProcessing');
+    if (isProcessing === null) {
+      await AsyncStorage.setItem('isProcessing', JSON.stringify(false));
+      return;
+    }
+    isProcessing = JSON.parse(isProcessing);
     if (isProcessing) {
       return;
     }
-    isProcessing = true;
+    await AsyncStorage.setItem('isProcessing', JSON.stringify(true));
     const tasks = await getTasksFromQueue();
     const nextTask = tasks.find((task: any) => task.status === 'pending');
     // console.log(`nextTask: ${nextTask}`);
     if (nextTask) {
       try {
         await updateTaskStatus(nextTask.id, 'inprogress');
-        await handleTask(nextTask.payload);
-        await removeCompletedTask(nextTask.id);
-        isProcessing = false;
+        await handleTask(nextTask);
       } catch (error) {
         console.error('Error processing task:', error);
         await updateTaskStatus(nextTask.id, 'pending');
-        isProcessing = false;
+        await AsyncStorage.setItem('isProcessing', JSON.stringify(false));
       }
     } else {
-      isProcessing = false;
+      await AsyncStorage.setItem('isProcessing', JSON.stringify(false));
     }
   }
 
   // Define the logic to handle tasks
-  async function handleTask(payload: any): Promise<void> {
+  async function handleTask(nextTask: any): Promise<void> {
+    const payload: any = nextTask.payload;
+    const taskId: any = nextTask.id;
     console.log('Handling task of payload:', payload);
 
     return new Promise(async (resolve, reject) => {
@@ -432,20 +435,25 @@ export default function VideoCamera({navigation}: any) {
           'Extracted frames paths:',
           JSON.stringify(segmentFramePaths),
         );
-        const pHashes: any = await generatePhashFromFrames(segmentFramePaths);
-        await saveToAPI({
-          pHashes,
+        eventEmitter.emit('extractFeamesAndSaveToAPI', {
+          message: 'Hello from video-camera component!',
+          taskId,
+          segmentFramePaths,
           videoOutputPath,
           payload,
+          latitude: locationRef.current?.latitude,
+          longitude: locationRef.current?.longitude,
+          altitude: locationRef.current?.altitude,
+          nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
         });
-        console.log('pHashes: ' + pHashes);
-        console.log('videoOutputPath: ' + videoOutputPath);
-        console.log('payload: ' + JSON.stringify(payload));
         console.log('Task resolved successfully');
         resolve();
       } catch (error) {
         console.error('Error in handling task:', error);
         reject(error);
+      } finally {
+        qrCodeDataRef.current = [];
+        setQrCodeData([]);
       }
     });
   }
@@ -503,52 +511,6 @@ export default function VideoCamera({navigation}: any) {
         },
       });
     }
-  };
-
-  const saveToAPI = async ({pHashes, payload, videoOutputPath}: any) => {
-    const deviceInfo: any = await fetchDeviceInfo();
-    const segments = payload.qrCodeData.map(
-      (qrCodeDataItem: any, index: number) => {
-        return {
-          ...qrCodeDataItem,
-          videoHash: pHashes[index],
-        };
-      },
-    );
-    const apiBody = {
-      videoId: payload.videoId,
-      fullVideoHash: pHashes.join(''),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      duration: payload.duration,
-      user: userRef.current,
-      publicData: {
-        path: videoOutputPath,
-        email: userRef.current.email,
-        name: userRef.current.name,
-        duration: payload.duration,
-        createdAt: new Date().toISOString(),
-      },
-      device: deviceInfo,
-      gps: {
-        latitude: locationRef.current?.latitude || 0,
-        longitude: locationRef.current?.longitude || 0,
-        altitude: locationRef.current?.altitude || 0,
-        timestamp: new Date().toISOString(),
-      },
-      nistRandom: {
-        nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-      },
-      segments,
-    };
-    console.log(JSON.stringify(apiBody));
-    const res = await saveVideoHash(apiBody)
-      .then(resp => resp)
-      .finally(() => {
-        qrCodeDataRef.current = [];
-        setQrCodeData([]);
-      });
-    console.log(res);
   };
 
   const gotoVerify = async () => {

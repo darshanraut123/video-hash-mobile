@@ -151,6 +151,7 @@ export default StyleSheet.create({
   canvasStyle: {
     backgroundColor: 'white',
     height: 32,
+    position:'absolute',
     width: 32,
   },
   toggleContainer: {
