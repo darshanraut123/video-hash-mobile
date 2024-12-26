@@ -1,9 +1,9 @@
-import {View, Text, ScrollView, TouchableOpacity} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, Alert} from 'react-native';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
 import RNQRGenerator from 'rn-qr-generator';
-import {findVideoInfo} from '../../../service/hash-requests';
+import {findVideoInfo, saveVerifyLogs} from '../../../service/hash-requests';
 import Loader from '../../../components/loader';
 import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import pHash from '../../../util/phash';
@@ -25,6 +25,8 @@ import Share from 'react-native-share';
 import Toast from 'react-native-toast-message';
 import styles from './style';
 import {Image} from 'react-native';
+import {fetchVersionInfo} from '../../../util/device-info';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
@@ -65,6 +67,8 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
 
   async function verifyPhoto(localUri: string) {
     setIsLoaderActive('Starting verification process');
+    let user: any = await AsyncStorage.getItem('user');
+    user = JSON.parse(user);
     const response = await getPhotoInfoFromDb(localUri);
     let generatedPhash: any = await generatePhashFromFrames([localUri]);
     generatedPhash = generatedPhash[0];
@@ -95,6 +99,12 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         position: 'bottom',
       });
     } else {
+      console.log({
+        email: user.email,
+        name: user.name,
+        message: 'No video id was found or qr code read failed',
+        uri,
+      });
       Toast.show({
         type: 'info',
         text1: 'Not found',
@@ -112,11 +122,23 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
 
   async function verifyVideo(pickedUri: string) {
     try {
+      setIsLoaderActive('Preparing verification');
       setVideoRecordFoundInfo(null);
       let videoInfoFromDB = await extractFirstFrameAndGetVideoInfoFromDB(
         pickedUri,
       );
       if (!videoInfoFromDB?.document) {
+        let user: any = await AsyncStorage.getItem('user');
+        user = JSON.parse(user);
+        await saveVerifyLogs({
+          verifierEmail: user.email,
+          verifierName: user.name,
+          message: 'No video id was found or qr code read failed',
+          uri: pickedUri,
+          videoId: 'NA',
+          verifyVideoHashes: [],
+          originalVideoHashes: [],
+        });
         Toast.show({
           type: 'info',
           text1: 'Not found',
@@ -245,13 +267,15 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     });
   };
 
-  async function verifyNonTrimmedVideo(uri: string) {
+  async function verifyNonTrimmedVideo(uriLocal: string) {
+    let user: any = await AsyncStorage.getItem('user');
+    user = JSON.parse(user);
     setIsLoaderActive('Extracting frames for decoding qrcode');
-    const frms = await extractSegmentFramesForPHash(uri);
+    const frms = await extractSegmentFramesForPHash(uriLocal);
     console.log('extractSegmentFramesForPHash ==> ' + JSON.stringify(frms));
     const generatedHashes: any = await generatePhashFromFrames(frms);
     const verifycroppedframePaths: any = await extractSegmentFramesForQrcode(
-      uri,
+      uriLocal,
     );
     console.log(
       'verifycroppedframePaths paths ==> ' +
@@ -275,6 +299,15 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     }
     setIsLoaderActive('Fetching records for matching videos');
     if (!videoId) {
+      await saveVerifyLogs({
+        verifierEmail: user.email,
+        verifierName: user.name,
+        message: 'No video id was found or qr code read failed',
+        uri: uriLocal,
+        videoId: 'NA',
+        verifyVideoHashes: [],
+        originalVideoHashes: [],
+      });
       Toast.show({
         type: 'info',
         text1: 'Not found',
@@ -298,6 +331,16 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         );
         setVideoRecordFoundInfo({...response.document, averageDistance});
         console.log(JSON.stringify({...response.document, averageDistance}));
+        await saveVerifyLogs({
+          verifierEmail: user.email,
+          verifierName: user.name,
+          message: 'Found a match',
+          uri: uriLocal,
+          videoId,
+          verifyVideoHashes: generatedHashes,
+          originalVideoHashes: dbHashSegments,
+          averageDistance,
+        });
         Toast.show({
           type: 'success',
           text1: 'Found a match',
@@ -305,6 +348,15 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
           position: 'bottom',
         });
       } else {
+        await saveVerifyLogs({
+          verifierEmail: user.email,
+          verifierName: user.name,
+          message: 'No data found',
+          uri: uriLocal,
+          videoId,
+          verifyVideoHashes: generatedHashes,
+          originalVideoHashes: dbHashSegments,
+        });
         Toast.show({
           type: 'info',
           text1: 'Not found',
@@ -314,6 +366,14 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
       }
     } else {
       setVideoRecordFoundInfo(null);
+      await saveVerifyLogs({
+        verifierEmail: user.email,
+        verifierName: user.name,
+        message: 'No video id was found in DB',
+        uri: uriLocal,
+        videoId,
+        verifyVideoHashes: generatedHashes,
+      });
       Toast.show({
         type: 'info',
         text1: 'Not found',
@@ -324,6 +384,8 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   }
 
   async function verifyTrimmedVideo({pickedUri, videoInfoFromDB}: any) {
+    let user: any = await AsyncStorage.getItem('user');
+    user = JSON.parse(user);
     console.log('duration not same ie video is trimmed ' + pickedUri);
     const videoSegmentsInfoFromDB: any = videoInfoFromDB.segments;
     let videoSegmentInfoFromVerifyVideo: any[] = [];
@@ -436,6 +498,15 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
       console.log('videoInfoFromDB : ' + JSON.stringify(videoInfoFromDB));
       const averageDistance = percentageMatch(dbHashSegments, generatedHashes);
       setVideoRecordFoundInfo({...videoInfoFromDB, averageDistance});
+      await saveVerifyLogs({
+        verifierEmail: user.email,
+        verifierName: user.name,
+        message: 'Match found',
+        uri: pickedUri,
+        videoId: defaultPhash,
+        verifyVideoHashes: generatedHashes,
+        originalVideoHashes: dbHashSegments,
+      });
       Toast.show({
         type: 'success',
         text1: averageDistance + ' % Match',
@@ -443,6 +514,15 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         position: 'bottom',
       });
     } else {
+      await saveVerifyLogs({
+        verifierEmail: user.email,
+        verifierName: user.name,
+        message: 'Not found',
+        uri: pickedUri,
+        videoId: defaultPhash,
+        verifyVideoHashes: generatedHashes,
+        originalVideoHashes: dbHashSegments,
+      });
       Toast.show({
         type: 'info',
         text1: 'Not found',
@@ -483,6 +563,10 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     }
   };
 
+  const showVersion = () => {
+    Alert.alert(`App Version: v${fetchVersionInfo()}`);
+  };
+
   return (
     <>
       {isLoaderActive && <Loader loaderText={isLoaderActive} />}
@@ -500,7 +584,9 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         />
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerText}>REALITY REGISTRY</Text>
+          <TouchableOpacity onPress={showVersion}>
+            <Text style={styles.headerText}>REALITY REGISTRY</Text>
+          </TouchableOpacity>
           <View style={styles.headerIcons}>
             <TouchableOpacity
               style={styles.icon}

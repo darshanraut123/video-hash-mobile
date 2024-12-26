@@ -358,8 +358,8 @@ export default function VideoCamera({navigation}: any) {
             return new Promise((resolveInner: any) => {
               RNQRGenerator.generate({
                 value: JSON.stringify(eachQrcodeData), // Data to encode in the QR code
-                height: 250, // Height of the QR code
-                width: 250, // Width of the QR code
+                height: 220, // Height of the QR code
+                width: 220, // Width of the QR code
                 correctionLevel: 'H', // Error correction level (H for high)
                 fileName: `qrcode_${index}`,
               })
@@ -754,7 +754,7 @@ export default function VideoCamera({navigation}: any) {
               <QRCode
                 backgroundColor="white"
                 value={JSON.stringify(jsonObject)}
-                size={120}
+                size={100}
                 getRef={ref => (qrCodeRef.current = ref)}
               />
             </View>

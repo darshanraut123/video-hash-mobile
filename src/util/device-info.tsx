@@ -50,5 +50,6 @@ export const fetchDeviceInfo = async () => {
   }
 };
 
-// Usage Example
-fetchDeviceInfo().then(info => console.log('Device Info:', info));
+export const fetchVersionInfo = () => {
+  return DeviceInfo.getVersion();
+};

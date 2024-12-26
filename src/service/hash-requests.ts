@@ -18,6 +18,8 @@ const GET_MY_VIDEOS_URL =
   'https://video-hash-272192025748.us-central1.run.app/api/myvideos';
 const GET_MY_PHOTOS_URL =
   'https://video-hash-272192025748.us-central1.run.app/api/myphotos';
+const LOGS_URL =
+  'https://video-hash-272192025748.us-central1.run.app/api/verifylogs';
 
 export const getLocalBeaconAPI = async () => {
   try {
@@ -95,6 +97,15 @@ export const getMyPhotos = async (email: string) => {
   try {
     console.log(GET_MY_VIDEOS_URL + '?email=' + email);
     let response = await axios.get(GET_MY_PHOTOS_URL + '?email=' + email);
+    return response.data;
+  } catch (error) {
+    console.warn('Error saving:', error);
+  }
+};
+
+export const saveVerifyLogs = async (body: any) => {
+  try {
+    let response = await axios.post(LOGS_URL, body);
     return response.data;
   } catch (error) {
     console.warn('Error saving:', error);
