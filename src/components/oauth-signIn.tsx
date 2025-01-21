@@ -1,8 +1,14 @@
-import {Alert, Button, View} from 'react-native';
+import {
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import React from 'react';
 import {
   GoogleSignin,
-  GoogleSigninButton,
   isErrorWithCode,
   isSuccessResponse,
   statusCodes,
@@ -12,6 +18,11 @@ import {useAuth} from './auth-provider';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
 import {LoginManager, AccessToken} from 'react-native-fbsdk-next';
+import Toast from 'react-native-toast-message';
+const googleLogo =
+  'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-1024.png';
+const facebookLogo =
+  'https://cdn2.iconfinder.com/data/icons/social-media-2285/512/1_Facebook_colored_svg_copy-1024.png';
 
 export default function OauthSignIn() {
   // Somewhere in your code
@@ -124,30 +135,88 @@ export default function OauthSignIn() {
         console.log('Logged in');
         console.log(JSON.stringify(apiresponse.data.user));
       } else {
-        Alert.alert('Sign Up Failed! Try again.');
+        Toast.show({
+          type: 'info',
+          text1: 'Sign Up Failed! Try again. 👋',
+          position: 'bottom',
+        });
       }
     } catch (e) {
       console.log(e);
-      Alert.alert('Error! Try again.');
+      Toast.show({
+        type: 'info',
+        text1: 'Error! Try again. 👋',
+        position: 'bottom',
+      });
     }
     setLoadingStatus(false);
   }
 
   return (
-    <View>
-      <GoogleSigninButton
-        color="light"
-        onPress={onGoogleButtonPress}
-        style={{width: '100%'}}
-      />
-      <Button
-        title="Facebook Sign-In"
+    <View style={styles.container}>
+      {/* Google Sign-In Button */}
+      <TouchableOpacity
+        style={styles.googleButton}
+        onPress={onGoogleButtonPress}>
+        <Image source={{uri: googleLogo}} style={styles.logo} />
+        <Text style={styles.buttonText}>Sign in with Google</Text>
+      </TouchableOpacity>
+
+      {/* Facebook Sign-In Button */}
+      <TouchableOpacity
+        style={styles.facebookButton}
         onPress={() =>
           onFacebookButtonPress().then(() =>
             console.log('Signed in with Facebook!'),
           )
-        }
-      />
+        }>
+        <Image source={{uri: facebookLogo}} style={styles.logo} />
+        <Text style={styles.buttonText}>Sign in with Facebook</Text>
+      </TouchableOpacity>
+      <Toast />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffa031',
+    borderColor: '#ffa031',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginVertical: 10,
+    width: '80%',
+    justifyContent: 'center',
+  },
+  facebookButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1877F2',
+    borderRadius: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginVertical: 10,
+    width: '80%',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 20,
+    height: 20,
+    marginRight: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+});

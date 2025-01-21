@@ -5,6 +5,11 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 16,
+    paddingTop: 40,
+  },
+  noRecordsConyainer: {
+    display: 'flex',
+    alignItems: 'center',
   },
   header: {
     flexDirection: 'row',
@@ -33,8 +38,10 @@ export default StyleSheet.create({
     marginTop: 50,
   },
   boxTxt: {
-    fontSize: 10,
+    fontSize: 14,
     color: 'red',
+
+    padding: 10,
   },
   icon: {
     width: 50,
@@ -87,6 +94,7 @@ export default StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 16,
+    marginTop: 10,
   },
   tableContainer: {
     borderWidth: 1,
@@ -110,5 +118,18 @@ export default StyleSheet.create({
   tableValue: {
     fontSize: 14,
     color: '#666',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333333',
+    marginVertical: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 20,
   },
 });

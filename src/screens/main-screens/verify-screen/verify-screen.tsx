@@ -1,4 +1,11 @@
-import {View, Text, ScrollView, TouchableOpacity, Alert} from 'react-native';
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  Modal,
+} from 'react-native';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
@@ -47,6 +54,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         : verifyVideo('file://' + routeParams.path); // Call verifyVideo when the component mounts or path changes
       setUri('file://' + routeParams.path);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeParams]); // Dependency array ensures this runs only when `path` changes
 
   const pickAndVerifyVideo = async () => {
@@ -580,6 +588,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
             height: 32,
             width: 32,
             position: 'absolute',
+            bottom: -100,
           }}
           ref={canvasRef}
         />
@@ -599,7 +608,25 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
               style={styles.icon}>
               <MaterialIcons name="feedback" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={logout} style={styles.icon}>
+            <TouchableOpacity
+              onPress={() =>
+                Alert.alert(
+                  'Logout', // Title of the alert
+                  'Are you sure you want to continue?', // Message in the alert
+                  [
+                    {
+                      text: 'Cancel', // Cancel button
+                      style: 'cancel', // The cancel button style
+                    },
+                    {
+                      text: 'OK', // OK button
+                      onPress: logout,
+                    },
+                  ],
+                  {cancelable: true}, // Allows closing the alert by tapping outside
+                )
+              }
+              style={styles.icon}>
               <Icon name="power" size={24} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -608,7 +635,7 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
           <Icon name="cloud-upload-outline" size={32} color="#007BFF" />
         </TouchableOpacity>
         <Text style={styles.boxTxt}>
-          Please tap the upload icon to select a video from gallery to verify.
+          Tap the upload icon to select a video or an image to verify.
         </Text>
         {/* Image with Confidence Score */}
         {videoRecordFoundInfo ? (
@@ -713,7 +740,20 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
             <View style={{height: 50}} />
           </ScrollView>
         ) : (
-          <Text>No records to show</Text>
+          <View style={[styles.container, styles.noRecordsConyainer]}>
+            {/* Replace the image URI with a proper no-records icon */}
+            <Image
+              source={{
+                uri: 'https://cdn-icons-png.flaticon.com/512/753/753345.png', // Example icon
+              }}
+              style={styles.icon}
+            />
+            <Text style={styles.title}>No Records to show</Text>
+            <Text style={styles.subtitle}>
+              There are no records to display right now. Please select a video
+              or an image!
+            </Text>
+          </View>
         )}
         <Toast />
       </View>

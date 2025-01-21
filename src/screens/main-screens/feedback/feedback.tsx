@@ -7,17 +7,24 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  ScrollView,
 } from 'react-native';
 import {saveFeedback} from '../../../service/hash-requests';
 import {Paths} from '../../../navigation/path';
 import Loader from '../../../components/loader';
+import Ionicon from 'react-native-vector-icons/Ionicons';
 
 const FeedbackComponent = ({navigation}: any) => {
   const [feedback, setFeedback] = useState('');
   const [isLoading, setLoading] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<any>(null);
 
   const handleSubmit = async () => {
     try {
+      if (!selectedRating) {
+        Alert.alert('Please select a rating!');
+        return;
+      }
       if (!feedback.trim()) {
         Alert.alert(
           'Feedback',
@@ -43,71 +50,165 @@ const FeedbackComponent = ({navigation}: any) => {
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {isLoading && <Loader loaderText="Submitting..." />}
+  const ratings = [
+    {label: 'Terrible', value: 1},
+    {label: 'Poor', value: 2},
+    {label: 'Average', value: 3},
+    {label: 'Good', value: 4},
+    {label: 'Great', value: 5},
+  ];
 
-      <Text style={styles.title}>We Value Your Feedback</Text>
-      <TextInput
-        style={styles.textBox}
-        placeholder="Write your feedback here..."
-        multiline
-        value={feedback}
-        onChangeText={setFeedback}
-      />
-      <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-        <Text style={styles.buttonText}>Submit</Text>
-      </TouchableOpacity>
-    </View>
-  );
+  if (isLoading) {
+    return <Loader />;
+  } else {
+    return (
+      <>
+        <View style={styles.header}>
+          <Text style={styles.headerText}>REALITY REGISTRY</Text>
+          <View style={styles.headerIcons}>
+            <TouchableOpacity
+              style={styles.icon}
+              onPress={() => navigation.navigate(Paths.VideoCamera)}>
+              <Ionicon name="arrow-back" size={24} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <ScrollView>
+          <View style={styles.container}>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={styles.headerText}>LET US KNOW WHAT YOU THINK</Text>
+            </View>
+
+            {/* Rating Section */}
+            <Text style={styles.sectionTitle}>RATE YOUR EXPERIENCE</Text>
+            <View style={styles.ratingContainer}>
+              {ratings.map(rating => (
+                <TouchableOpacity
+                  key={rating.value}
+                  onPress={() => setSelectedRating(rating.value)}
+                  style={styles.ratingItem}>
+                  <Ionicon
+                    name={
+                      selectedRating >= rating.value ? 'star' : 'star-outline'
+                    }
+                    size={30}
+                    color={selectedRating >= rating.value ? '#4285F4' : '#ccc'}
+                  />
+
+                  <Text
+                    style={[
+                      styles.ratingLabel,
+                      selectedRating === rating.value && {color: '#4285F4'},
+                    ]}>
+                    {rating.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Comment Section */}
+            <Text style={styles.sectionTitle}>Comment or suggestion</Text>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Enter text here"
+              value={feedback}
+              onChangeText={setFeedback}
+              multiline
+              numberOfLines={4}
+            />
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}>
+              <Text style={styles.submitButtonText}>Submit feedback</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </>
+    );
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    padding: 20,
+    paddingBottom: 300,
   },
-  title: {
-    fontSize: 22,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+  },
+  headerText: {
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
-    textAlign: 'center',
+    color: '#007BFF',
   },
-  textBox: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    padding: 10,
+  sectionTitle: {
     fontSize: 16,
-    textAlignVertical: 'top',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  button: {
+    fontWeight: 'bold',
     marginTop: 20,
-    backgroundColor: '#007BFF',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 3,
+    marginBottom: 10,
+    color: '#333',
   },
-  buttonText: {
+  ratingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginVertical: 20,
+  },
+  ratingItem: {
+    alignItems: 'center',
+  },
+  ratingLabel: {
+    marginTop: 5,
+    fontSize: 12,
+    color: '#333',
+  },
+  textInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    backgroundColor: '#f9f9f9',
+    textAlignVertical: 'top',
+    minHeight: 100,
+  },
+  submitButton: {
+    backgroundColor: '#4285F4',
+    borderRadius: 5,
+    paddingVertical: 15,
+    paddingHorizontal: 30,
+    marginTop: 20,
+    width: '100%',
+    alignItems: 'center',
+  },
+  submitButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  headerIcons: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  icon: {
+    width: 50,
+    height: 50,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#36454F',
+    borderRadius: 25,
   },
 });
 

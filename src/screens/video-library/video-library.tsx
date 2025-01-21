@@ -1,8 +1,14 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Modal} from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  Alert,
+} from 'react-native';
 import {NavigationProp} from '@react-navigation/native';
 import VideoList from './video-list';
-import Video from 'react-native-video';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Share from 'react-native-share';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
@@ -44,6 +50,7 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     null,
   );
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [showToolBar, setShowToolBar] = useState<boolean>(false);
   const [photoTabActive, setPhotoTabActive] = useState<boolean>(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
@@ -170,10 +177,12 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
 
   const shareVideo = async () => {
     try {
+      const selectedUri = selectedPhoto ? selectedPhoto : selectedVideo;
+      const content = selectedPhoto ? 'image' : 'video';
       // Share options
       const options = {
-        url: `file://${selectedVideo}`, // Share video using its file URI
-        type: 'video/*', // Specify the file type
+        url: `file://${selectedUri}`, // Share video using its file URI
+        type: content + '/*', // Specify the file type
       };
 
       await Share.open(options);
@@ -266,28 +275,25 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
               <TouchableOpacity
                 onPress={() => shareVideo()}
                 style={[styles.closeButton, styles.shareBtn]}>
-                <Icon name="share-outline" size={24} color="white" />
+                <Icon name="share-outline" size={36} color="white" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setSelectedVideo(null)}
                 style={styles.closeButton}>
-                <Icon name="close" size={24} color="white" />
+                <Icon name="close" size={36} color="white" />
               </TouchableOpacity>
-              {/* <Video
-                source={{
-                  uri: selectedVideo,
-                  type: 'video/*',
-                }}
-                style={styles.fullScreenVideo}
-                resizeMode="contain"
-                controls={false}
-              /> */}
+
               <VideoPlayer
                 source={{uri: selectedVideo}}
                 style={styles.fullScreenVideo}
                 disableFullscreen
                 disableVolume
                 disableBack
+                onPlay={() => console.log('Video started')}
+                onPause={() => console.log('Video paused')}
+                onEnd={() => console.log('Video ended')}
+                onShowControls={() => console.log('onShowControls ended')}
+                onHideControls={() => console.log('onHideControls ended')}
               />
             </View>
           </Modal>
@@ -299,12 +305,12 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
               <TouchableOpacity
                 onPress={() => shareVideo()}
                 style={[styles.closeButton, styles.shareBtn]}>
-                <Icon name="share-outline" size={24} color="white" />
+                <Icon name="share-outline" size={36} color="white" />
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setSelectedPhoto(null)}
                 style={styles.closeButton}>
-                <Icon name="close" size={24} color="white" />
+                <Icon name="close" size={36} color="white" />
               </TouchableOpacity>
               <Image
                 source={{uri: 'file://' + selectedPhoto}}
@@ -325,6 +331,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    paddingTop: 40,
   },
   tabContainer: {
     display: 'flex',
@@ -357,11 +364,11 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: 'absolute',
-    top: 40,
-    right: 20,
-    zIndex: 10,
+    top: 50,
+    right: 25,
+    zIndex: 1,
   },
-  shareBtn: {left: 20},
+  shareBtn: {left: 25},
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

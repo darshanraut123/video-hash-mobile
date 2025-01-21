@@ -5,6 +5,7 @@ const CustomModal: React.FC<any> = ({
   infoModalVisible,
   setInfoModalVisible,
   children,
+  ...props
 }) => {
   return (
     <Modal
@@ -13,7 +14,8 @@ const CustomModal: React.FC<any> = ({
       visible={infoModalVisible ? true : false}
       onRequestClose={() => {
         setInfoModalVisible(null);
-      }}>
+      }}
+      {...props}>
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           {children}

@@ -7,17 +7,17 @@ import {resetTasksOnAppStart} from './src/util/queue';
 import {StyleSheet} from 'react-native';
 import {useGetShare} from './src/screens/main-screens/video-camera/useGetShare';
 import TaskRunner from './task-runner';
-import * as Sentry from '@sentry/react-native';
+// import * as Sentry from '@sentry/react-native';
 
-Sentry.init({
-  dsn: 'https://44f6c02b289242e785b6f9745f2b8225@o4508617635659776.ingest.us.sentry.io/4508617637298176',
-  // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
-  // We recommend adjusting this value in production.
-  tracesSampleRate: 1.0,
-  // profilesSampleRate is relative to tracesSampleRate.
-  // Here, we'll capture profiles for 100% of transactions.
-  profilesSampleRate: 1.0,
-});
+// Sentry.init({
+//   dsn: 'https://44f6c02b289242e785b6f9745f2b8225@o4508617635659776.ingest.us.sentry.io/4508617637298176',
+//   // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
+//   // We recommend adjusting this value in production.
+//   tracesSampleRate: 1.0,
+//   // profilesSampleRate is relative to tracesSampleRate.
+//   // Here, we'll capture profiles for 100% of transactions.
+//   profilesSampleRate: 1.0,
+// });
 
 const App: React.FC = () => {
   useGetShare();

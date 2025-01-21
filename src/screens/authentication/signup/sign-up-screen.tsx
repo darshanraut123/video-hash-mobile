@@ -8,11 +8,15 @@ import {
   TouchableOpacity,
   Alert,
   Image,
+  ScrollView,
+  Keyboard,
+  TouchableHighlight,
 } from 'react-native';
 import {Paths} from '../../../navigation/path';
 import CheckBoxIcon from 'react-native-elements/dist/checkbox/CheckBoxIcon';
 import {signUpAPI} from '../../../service/auth-requests';
 import Loader from '../../../components/loader';
+import Toast from 'react-native-toast-message';
 
 interface SignUpScreenProps {
   navigation: NavigationProp<any>; // Add explicit type for navigation
@@ -29,7 +33,12 @@ export default function SignUpScreen({navigation}: SignUpScreenProps) {
   async function signUp() {
     setIsLoading(true);
     if (!agree || !name || !email || !password || !confirmPassword) {
-      Alert.alert('Provide correct data!');
+      Toast.show({
+        type: 'error',
+        text1: '😬',
+        text2: 'Provide correct data!',
+        position: 'bottom',
+      });
       setIsLoading(false);
       return;
     }
@@ -42,10 +51,20 @@ export default function SignUpScreen({navigation}: SignUpScreenProps) {
         loginType: 'email',
       });
       if (response && response.status === 200) {
-        Alert.alert('Sign Up Successful! Please login.');
+        Toast.show({
+          type: 'success',
+          text1: '😬',
+          text2: 'Sign Up Successful! Please login.',
+          position: 'bottom',
+        });
         navigation.navigate(Paths.SignIn);
       } else {
-        Alert.alert('Sign Up Failed! Try again.');
+        Toast.show({
+          type: 'error',
+          text1: '😬',
+          text2: 'Try again',
+          position: 'bottom',
+        });
       }
     } catch (e) {
       console.log(e);
@@ -57,63 +76,76 @@ export default function SignUpScreen({navigation}: SignUpScreenProps) {
   return isLoading ? (
     <Loader loaderText={'Signing you up...'} />
   ) : (
-    <View style={styles.container}>
-      <Text style={styles.logo}>REALITY REGISTRY</Text>
-      <View style={styles.imgCon}>
-        <Image
-          style={styles.rr_logo}
-          source={require('../../../../android/assets/images/logo.png')}
-        />
-      </View>
-      <Text style={styles.subTitle}>Create account</Text>
+    <ScrollView>
+      <TouchableHighlight onPress={Keyboard.dismiss} style={styles.container}>
+        <>
+          <Text style={styles.logo}>REALITY REGISTRY</Text>
+          <View style={styles.imgCon}>
+            <Image
+              style={styles.rr_logo}
+              source={require('../../../../android/assets/images/logo.png')}
+            />
+          </View>
+          <Text style={styles.subTitle}>Create account</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Full Name"
-        value={name}
-        onChangeText={text => setName(text)}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Full Name"
+            value={name}
+            placeholderTextColor="grey"
+            onChangeText={text => setName(text)}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Your email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={text => setEmail(text)}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Your email"
+            keyboardType="email-address"
+            value={email}
+            placeholderTextColor="grey"
+            onChangeText={text => setEmail(text)}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry={true}
-        value={password}
-        onChangeText={text => setPassword(text)}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            secureTextEntry={true}
+            value={password}
+            placeholderTextColor="grey"
+            onChangeText={text => setPassword(text)}
+          />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Confirm Password"
-        secureTextEntry={true}
-        value={confirmPassword}
-        onChangeText={text => setConfirmPassword(text)}
-      />
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            secureTextEntry={true}
+            value={confirmPassword}
+            onChangeText={text => setConfirmPassword(text)}
+            placeholderTextColor="grey"
+          />
 
-      <View style={styles.agreement}>
-        <CheckBoxIcon checked={agree} onIconPress={() => setAgree(!agree)} />
-        <Text style={styles.agreementText}>
-          I agree to the <Text style={styles.link}>Terms of Service</Text> and{' '}
-          <Text style={styles.link}>Privacy Policy</Text>.
-        </Text>
-      </View>
+          <View style={styles.agreement}>
+            <CheckBoxIcon
+              checked={agree}
+              onIconPress={() => setAgree(!agree)}
+            />
+            <Text style={styles.agreementText}>
+              I agree to the <Text style={styles.link}>Terms of Service</Text>{' '}
+              and <Text style={styles.link}>Privacy Policy</Text>.
+            </Text>
+          </View>
 
-      <TouchableOpacity style={styles.button} onPress={signUp}>
-        <Text style={styles.buttonText}>Sign Up</Text>
-      </TouchableOpacity>
+          <TouchableOpacity style={styles.button} onPress={signUp}>
+            <Text style={styles.buttonText}>Sign Up</Text>
+          </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate(Paths.SignIn)}>
-        <Text style={styles.linkText}>Already have an account? Sign in</Text>
-      </TouchableOpacity>
-    </View>
+          <TouchableOpacity onPress={() => navigation.navigate(Paths.SignIn)}>
+            <Text style={styles.linkText}>
+              Already have an account? Sign in
+            </Text>
+          </TouchableOpacity>
+        </>
+      </TouchableHighlight>
+    </ScrollView>
   );
 }
 
@@ -123,6 +155,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 300,
   },
   logo: {
     fontWeight: 'bold',
@@ -179,10 +213,9 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   rr_logo: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#ccc', // Placeholder for logo background
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    backgroundColor: '#FFF', // Placeholder for logo background
     marginBottom: 10,
   },
   imgCon: {width: '100%', alignItems: 'center'},

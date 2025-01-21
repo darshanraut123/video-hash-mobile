@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-inline-styles */
 import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {
   Platform,
@@ -39,10 +40,7 @@ import {
 } from '../../../util/ffmpeg-util';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {Paths} from '../../../navigation/path';
-import {
-  getTasksFromQueue,
-  updateTaskStatus,
-} from '../../../util/queue';
+import {getTasksFromQueue, updateTaskStatus} from '../../../util/queue';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomError from '../../../components/custom-error';
 import styles, {options} from './styles';
@@ -50,15 +48,16 @@ import {useIsForeground} from './use-is-foreground';
 import {fetchDeviceInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
 import {getUniqueId, saveToCameraRoll} from '../../../util/common';
-import Loader from '../../../components/loader';
 import eventEmitter from '../../../util/event-emitter';
+import CustomModal from '../../../components/custom-modal';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [openSettings, setOpenSettings] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
-  const [isLoaderActive, setIsLoaderActive] = useState<any>(null);
+  const [timeDelay, setTimeDelay] = useState<any>(false);
   const [device, setDevice] = useState<CameraDevice>();
   const [hasPermissions, setHasPermissions] = useState(false);
   const [isCameraInitialized, handleCameraInitialized] = useState(false);
@@ -88,6 +87,7 @@ export default function VideoCamera({navigation}: any) {
   const format = useCameraFormat(device, [
     {fps: 30},
     {videoResolution: {width: 1280, height: 720}},
+    {photoResolution: {width: 1280, height: 720}},
   ]);
 
   useEffect(() => {
@@ -112,6 +112,10 @@ export default function VideoCamera({navigation}: any) {
   }, [devices, cameraPosition]);
 
   useEffect(() => {
+    setTimeout(() => {
+      setTimeDelay(true);
+    }, 2000);
+
     const requestPermissions = async () => {
       const cameraPermission: string = await Camera.requestCameraPermission();
       const microphonePermission: string =
@@ -218,6 +222,7 @@ export default function VideoCamera({navigation}: any) {
       timer.intervalExists('nistTimer') && timer.clearInterval('nistTimer');
       timer.intervalExists('queueTimer') && timer.clearInterval('queueTimer');
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFocus = useCallback(
@@ -466,51 +471,57 @@ export default function VideoCamera({navigation}: any) {
       handleStartStopwatch();
       await cameraRef.current.startRecording({
         onRecordingFinished: async (finishedVideo: VideoFile) => {
-          setIsLoaderActive('Saving...'); // Reset loader in case of an error
           isRecordingShared.value = false;
           setIsRecording(false);
           handleResetStopwatch();
-          console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
-          const currentTime: any = Date.now();
-          const task = {
-            id: videoId.value,
-            type: 'video',
-            payload: {
-              videoId: videoId.value,
-              qrCodeData: qrCodeDataRef.current,
-              duration: finishedVideo.duration,
-              path: `file://${
-                Platform.OS === 'ios'
-                  ? RNFS.LibraryDirectoryPath
-                  : RNFS.DocumentDirectoryPath
-              }/video_${currentTime}.mov`,
-            },
-            status: 'pending',
-            createdAt: new Date().toISOString(),
-          };
-          await RNFS.copyFile(finishedVideo.path, task.payload.path);
-          const tasks = await getTasksFromQueue();
-          tasks.push(task);
-          await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(tasks));
-          console.log('Tasks queue updated');
-          setIsLoaderActive(null);
-          videoId.value = null;
-          qrCodeDataRef.current = [];
-          setQrCodeData([]);
-          segmentNo.value = 0;
+          //   console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
+          //   const currentTime: any = Date.now();
+          //   const task = {
+          //     id: videoId.value,
+          //     type: 'video',
+          //     payload: {
+          //       videoId: videoId.value,
+          //       qrCodeData: qrCodeDataRef.current,
+          //       duration: finishedVideo.duration,
+          //       path: `file://${
+          //         Platform.OS === 'ios'
+          //           ? RNFS.LibraryDirectoryPath
+          //           : RNFS.DocumentDirectoryPath
+          //       }/video_${currentTime}.mov`,
+          //     },
+          //     status: 'pending',
+          //     createdAt: new Date().toISOString(),
+          //   };
+          //   await RNFS.copyFile(finishedVideo.path, task.payload.path);
+          //   const tasks = await getTasksFromQueue();
+          //   tasks.push(task);
+          //   await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(tasks));
+          //   console.log('Tasks queue updated');
+          //   videoId.value = null;
+          //   qrCodeDataRef.current = [];
+          //   setQrCodeData([]);
+          //   segmentNo.value = 0;
         },
         onRecordingError: error => {
-          isRecordingShared.value = false;
-          setIsRecording(false);
-          console.error(error);
-          setIsLoaderActive(null);
-          videoId.value = null;
-          qrCodeDataRef.current = [];
-          setQrCodeData([]);
-          segmentNo.value = 0;
+          //   isRecordingShared.value = false;
+          //   setIsRecording(false);
+          //   console.error(error);
+          //   videoId.value = null;
+          //   qrCodeDataRef.current = [];
+          //   setQrCodeData([]);
+          //   segmentNo.value = 0;
         },
       });
     }
+  };
+
+  // Function to format the time to MM:SS
+  const formatTime = (time: any) => {
+    const minutes = Math.floor(time / 60000);
+    const seconds = Math.floor((time % 60000) / 1000);
+    return `${minutes < 10 ? '0' : ''}${minutes}:${
+      seconds < 10 ? '0' : ''
+    }${seconds}`;
   };
 
   const gotoVerify = async () => {
@@ -663,7 +674,7 @@ export default function VideoCamera({navigation}: any) {
     );
   }
 
-  if (!hasPermissions) {
+  if (!hasPermissions && timeDelay) {
     return (
       <CustomError
         imageName="nopermissions"
@@ -676,21 +687,20 @@ export default function VideoCamera({navigation}: any) {
   return (
     <View style={styles.container}>
       <Canvas style={styles.canvasStyle} ref={canvasRef} />
-      {isLoaderActive && <Loader subTxt="Saving..." />}
       {isPreview && capturedPhoto ? (
         <View style={styles.previewContainer}>
           <Image
             source={{uri: 'file://' + capturedPhoto}}
             style={styles.previewImage}
           />
-          <View style={styles.toggleContainer}>
+          <View style={[styles.toggleContainer, styles.saveDiscardContainer]}>
             <TouchableOpacity
-              style={[styles.toggleButton, styles.activeButton]}
+              style={[styles.toggleButton, styles.active, {marginRight: 20}]}
               onPress={savePhoto}>
               <Text style={styles.buttonText}>Save</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.toggleButton, styles.activeButton]}
+              style={[styles.toggleButton, styles.active, {marginLeft: 20}]}
               onPress={discardPhoto}>
               <Text style={styles.buttonText}>Discard</Text>
             </TouchableOpacity>
@@ -716,26 +726,11 @@ export default function VideoCamera({navigation}: any) {
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
 
-          <TouchableOpacity
-            style={styles.flashLightContainer}
-            onPress={() => setIsTorchOn(prev => !prev)}>
-            <MaterialIcons
-              name={'flashlight-on'}
-              size={25}
-              color={isTorchOn ? '#FFD700' : '#f4f3f4'}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.cameraSwicthContainer}
-            onPress={() =>
-              setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
-            }>
-            <MaterialIcons
-              name={'cameraswitch'}
-              size={25}
-              color={'gainsboro'}
-            />
-          </TouchableOpacity>
+          <View style={[styles.settingContainer]}>
+            <TouchableOpacity onPress={() => setOpenSettings(!openSettings)}>
+              <MaterialIcons name="settings" color="#B0BEC5" size={36} />
+            </TouchableOpacity>
+          </View>
 
           {isRecording && (
             <View style={styles.stopwatchContainer}>
@@ -787,27 +782,26 @@ export default function VideoCamera({navigation}: any) {
                 <TouchableOpacity
                   onPress={() => navigation.navigate(Paths.VideoLibrary)}
                   style={styles.library_button_left}>
-                  <Icon name="albums" size={40} color="#00ACc1" />
+                  <Icon name="albums" size={40} color="#00ACC1" />
                 </TouchableOpacity>
               )}
               {!isRecording && (
                 <TouchableOpacity
                   onPress={gotoVerify}
                   style={styles.library_button_right}>
-                  <Icon name="finger-print" size={40} color="#00ACc1" />
+                  <Icon name="finger-print" size={40} color="#00ACC1" />
                 </TouchableOpacity>
               )}
               <Toast />
             </View>
           )}
-          {/* Toggle Buttons */}
           <View style={styles.toggleContainer}>
             <TouchableOpacity
+              onPress={() => setActiveMode('photo')}
               style={[
                 styles.toggleButton,
-                activeMode === 'photo' && styles.activeButton,
-              ]}
-              onPress={() => setActiveMode('photo')}>
+                activeMode === 'photo' && styles.active,
+              ]}>
               <Text
                 style={[
                   styles.toggleText,
@@ -817,11 +811,11 @@ export default function VideoCamera({navigation}: any) {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
+              onPress={() => setActiveMode('video')}
               style={[
                 styles.toggleButton,
-                activeMode === 'video' && styles.activeButton,
-              ]}
-              onPress={() => setActiveMode('video')}>
+                activeMode === 'video' && styles.active,
+              ]}>
               <Text
                 style={[
                   styles.toggleText,
@@ -833,6 +827,45 @@ export default function VideoCamera({navigation}: any) {
           </View>
         </>
       )}
+
+      <CustomModal
+        infoModalVisible={openSettings}
+        setInfoModalVisible={setOpenSettings}
+        animationType="slide"
+        transparent={true}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalHeading}>Settings</Text>
+          <View style={styles.divider} />
+
+          <TouchableOpacity
+            onPress={() => setIsTorchOn(!isTorchOn)}
+            style={styles.modalToggleContainer}>
+            <View>
+              <Text style={styles.toggleLabel}>Flashlight Toogle</Text>
+            </View>
+            <View
+              style={[
+                styles.radioButton,
+                isTorchOn ? styles.radioButtonActive : null,
+              ]}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() =>
+              setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
+            }
+            style={styles.modalToggleContainer}>
+            <Text style={styles.toggleLabel}>Camera Switch</Text>
+            <View
+              style={[
+                styles.radioButton,
+                cameraPosition === 'front' ? styles.radioButtonActive : null,
+              ]}
+            />
+          </TouchableOpacity>
+        </View>
+      </CustomModal>
     </View>
   );
 }

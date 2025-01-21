@@ -29,8 +29,7 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
     if (!email || !password) {
       Toast.show({
         type: 'error',
-        text1: '😬',
-        text2: 'Provide email and password',
+        text1: '😬 Provide email and password',
         position: 'bottom',
       });
       return;
@@ -41,9 +40,8 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
   return isLoading ? (
     <Loader loaderText={'Logging in...'} />
   ) : (
-    <View style={styles.container}>
-      <Toast />
-      <ScrollView>
+    <ScrollView>
+      <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
           <Image
@@ -60,6 +58,7 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
           <TextInput
             style={styles.input}
             placeholder="Enter email..."
+            placeholderTextColor={'grey'}
             keyboardType="email-address"
             autoCapitalize="none"
             onChangeText={setEmail}
@@ -68,22 +67,10 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
           <TextInput
             style={styles.input}
             placeholder="Enter password..."
+            placeholderTextColor={'grey'}
             secureTextEntry
             onChangeText={setPassword}
           />
-          {/* <View style={styles.options}>
-            <CheckBox
-              style={styles.checkbox}
-              onClick={() => {
-                console.log();
-              }}
-              isChecked={true}
-              rightText={'Remember me'}
-            />
-            <TouchableOpacity>
-              <Text style={styles.forgotPassword}>Forgot password?</Text>
-            </TouchableOpacity>
-          </View> */}
 
           {/* Sign In Button */}
           <Button
@@ -106,8 +93,8 @@ const SignInScreen = ({navigation}: SignInScreenProps) => {
         {/* Divider */}
         <View style={styles.divider} />
         <OauthSignIn />
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 };
 
@@ -120,6 +107,7 @@ const styles = StyleSheet.create({
     padding: 20,
     justifyContent: 'center',
     height: '100%',
+    paddingBottom: 200,
   },
   closeButton: {
     position: 'absolute',
@@ -129,12 +117,12 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 20,
+    paddingTop: 50,
   },
   logo: {
-    width: 80,
-    height: 80,
-    backgroundColor: '#ccc', // Placeholder for logo background
-    borderRadius: 40,
+    width: 100,
+    height: 100,
+    backgroundColor: '#FFF', // Placeholder for logo background
     marginBottom: 10,
   },
   face_id_logo: {
