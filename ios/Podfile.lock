@@ -1777,6 +1777,29 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNSentry (6.5.0):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.01.01.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Sentry/HybridSDK (= 8.43.0)
+    - Yoga
   - RNShare (11.0.4):
     - DoubleConversion
     - glog
@@ -1821,6 +1844,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - Sentry/HybridSDK (8.43.0)
   - SocketRocket (0.7.0)
   - VisionCamera (4.5.3):
     - VisionCamera/Core (= 4.5.3)
@@ -1925,6 +1949,7 @@ DEPENDENCIES:
   - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNQrGenerator (from `../node_modules/rn-qr-generator`)
   - RNScreens (from `../node_modules/react-native-screens`)
+  - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNShare (from `../node_modules/react-native-share`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
@@ -1953,6 +1978,7 @@ SPEC REPOS:
     - GTMAppAuth
     - GTMSessionFetcher
     - RecaptchaInterop
+    - Sentry
     - SocketRocket
     - ZXingObjC
 
@@ -2124,6 +2150,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/rn-qr-generator"
   RNScreens:
     :path: "../node_modules/react-native-screens"
+  RNSentry:
+    :path: "../node_modules/@sentry/react-native"
   RNShare:
     :path: "../node_modules/react-native-share"
   RNSVG:
@@ -2239,9 +2267,11 @@ SPEC CHECKSUMS:
   RNPermissions: 294531ede5a64d1528463e88fffef05675842042
   RNQrGenerator: 5c12ab86443a07e923735800679da7b6fcaaeb31
   RNScreens: de55b9d7de8a017d1588dcb70415492d0b0597c2
+  RNSentry: 43c7d810bc3b5d7da8a6d6cf71d378ee35b04de3
   RNShare: f1f2fc67c9032793f4203deffa611cb6c3c4c059
   RNSVG: 4590aa95758149fa27c5c83e54a6a466349a1688
   RNVectorIcons: 7b81882e9c9369031aede0016dee0fe415cf2f43
+  Sentry: 532b281a53b1b45a523fd592f608956fb36e577c
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   VisionCamera: 3b7cfecebbcb3871c4dd3fb47791b96a47fe5371
   Yoga: c8810b40c43fa71cc1492f358ad5cd5fc1b505da

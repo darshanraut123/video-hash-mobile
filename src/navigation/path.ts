@@ -7,4 +7,5 @@ export const enum Paths {
   Verify = 'Verify',
   VideoLibrary = 'VideoLibrary',
   PhotoLibrary = 'PhotoLibrary',
+  FeedBack = 'FeedBack',
 }

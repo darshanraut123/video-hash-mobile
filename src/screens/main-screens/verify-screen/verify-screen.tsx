@@ -19,6 +19,7 @@ import {calculateHammingDistance, percentageMatch} from '../../../util/common';
 import {useAuth} from '../../../components/auth-provider';
 import * as Progress from 'react-native-progress';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
+import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video';
 import {Paths} from '../../../navigation/path';
 import Share from 'react-native-share';
@@ -593,7 +594,11 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
               onPress={() => navigation.navigate(Paths.VideoCamera)}>
               <Icon name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
-
+            <TouchableOpacity
+              onPress={() => navigation.navigate(Paths.FeedBack)}
+              style={styles.icon}>
+              <MaterialIcons name="feedback" size={24} color="#fff" />
+            </TouchableOpacity>
             <TouchableOpacity onPress={logout} style={styles.icon}>
               <Icon name="power" size={24} color="#fff" />
             </TouchableOpacity>
