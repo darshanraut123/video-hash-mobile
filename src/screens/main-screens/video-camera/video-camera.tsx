@@ -474,54 +474,45 @@ export default function VideoCamera({navigation}: any) {
           isRecordingShared.value = false;
           setIsRecording(false);
           handleResetStopwatch();
-          //   console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
-          //   const currentTime: any = Date.now();
-          //   const task = {
-          //     id: videoId.value,
-          //     type: 'video',
-          //     payload: {
-          //       videoId: videoId.value,
-          //       qrCodeData: qrCodeDataRef.current,
-          //       duration: finishedVideo.duration,
-          //       path: `file://${
-          //         Platform.OS === 'ios'
-          //           ? RNFS.LibraryDirectoryPath
-          //           : RNFS.DocumentDirectoryPath
-          //       }/video_${currentTime}.mov`,
-          //     },
-          //     status: 'pending',
-          //     createdAt: new Date().toISOString(),
-          //   };
-          //   await RNFS.copyFile(finishedVideo.path, task.payload.path);
-          //   const tasks = await getTasksFromQueue();
-          //   tasks.push(task);
-          //   await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(tasks));
-          //   console.log('Tasks queue updated');
-          //   videoId.value = null;
-          //   qrCodeDataRef.current = [];
-          //   setQrCodeData([]);
-          //   segmentNo.value = 0;
+          console.log('finishedVideo: ' + JSON.stringify(finishedVideo));
+          const currentTime: any = Date.now();
+          const task = {
+            id: videoId.value,
+            type: 'video',
+            payload: {
+              videoId: videoId.value,
+              qrCodeData: qrCodeDataRef.current,
+              duration: finishedVideo.duration,
+              path: `file://${
+                Platform.OS === 'ios'
+                  ? RNFS.LibraryDirectoryPath
+                  : RNFS.DocumentDirectoryPath
+              }/video_${currentTime}.mov`,
+            },
+            status: 'pending',
+            createdAt: new Date().toISOString(),
+          };
+          await RNFS.copyFile(finishedVideo.path, task.payload.path);
+          const tasks = await getTasksFromQueue();
+          tasks.push(task);
+          await AsyncStorage.setItem('TASK_QUEUE', JSON.stringify(tasks));
+          console.log('Tasks queue updated');
+          videoId.value = null;
+          qrCodeDataRef.current = [];
+          setQrCodeData([]);
+          segmentNo.value = 0;
         },
         onRecordingError: error => {
-          //   isRecordingShared.value = false;
-          //   setIsRecording(false);
-          //   console.error(error);
-          //   videoId.value = null;
-          //   qrCodeDataRef.current = [];
-          //   setQrCodeData([]);
-          //   segmentNo.value = 0;
+          isRecordingShared.value = false;
+          setIsRecording(false);
+          console.error(error);
+          videoId.value = null;
+          qrCodeDataRef.current = [];
+          setQrCodeData([]);
+          segmentNo.value = 0;
         },
       });
     }
-  };
-
-  // Function to format the time to MM:SS
-  const formatTime = (time: any) => {
-    const minutes = Math.floor(time / 60000);
-    const seconds = Math.floor((time % 60000) / 1000);
-    return `${minutes < 10 ? '0' : ''}${minutes}:${
-      seconds < 10 ? '0' : ''
-    }${seconds}`;
   };
 
   const gotoVerify = async () => {
