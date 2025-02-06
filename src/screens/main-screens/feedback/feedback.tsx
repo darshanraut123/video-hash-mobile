@@ -13,6 +13,7 @@ import {saveFeedback} from '../../../service/hash-requests';
 import {Paths} from '../../../navigation/path';
 import Loader from '../../../components/loader';
 import Ionicon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 
 const FeedbackComponent = ({navigation}: any) => {
   const [feedback, setFeedback] = useState('');
@@ -64,14 +65,10 @@ const FeedbackComponent = ({navigation}: any) => {
     return (
       <>
         <View style={styles.header}>
-          <Text style={styles.headerText}>REALITY REGISTRY</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity
-              style={styles.icon}
-              onPress={() => navigation.navigate(Paths.VideoCamera)}>
-              <Ionicon name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          <Text style={styles.title}>REALITY REGISTRY</Text>
+          <TouchableOpacity onPress={() => navigation.navigate(Paths.Goto)}>
+            <Icon name="menu" size={24} color="#007BFF" />
+          </TouchableOpacity>
         </View>
         <ScrollView>
           <View style={styles.container}>

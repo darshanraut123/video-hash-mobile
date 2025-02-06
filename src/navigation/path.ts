@@ -3,6 +3,7 @@ export const enum Paths {
   SignUp = 'SignUp',
   Auth = 'Auth',
   Home = 'Home',
+  Goto = 'Goto',
   VideoCamera = 'VideoCamera',
   Verify = 'Verify',
   VideoLibrary = 'VideoLibrary',

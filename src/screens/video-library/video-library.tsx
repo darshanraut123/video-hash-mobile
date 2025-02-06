@@ -1,12 +1,5 @@
 import React, {useEffect, useState} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Modal,
-  Alert,
-} from 'react-native';
+import {View, Text, TouchableOpacity, StyleSheet, Modal} from 'react-native';
 import {NavigationProp} from '@react-navigation/native';
 import VideoList from './video-list';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -50,7 +43,6 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     null,
   );
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [showToolBar, setShowToolBar] = useState<boolean>(false);
   const [photoTabActive, setPhotoTabActive] = useState<boolean>(false);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
@@ -229,13 +221,12 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
         <View style={styles.header}>
           <Text style={styles.headerText}>REALITY REGISTRY</Text>
           <View style={styles.headerIcons}>
-            <TouchableOpacity
-              style={styles.icon}
-              onPress={() => navigation.navigate(Paths.VideoCamera)}>
-              <Icon name="arrow-back" size={24} color="#fff" />
+            <TouchableOpacity onPress={() => navigation.navigate(Paths.Goto)}>
+              <Icon name="menu" size={24} color="#007BFF" />
             </TouchableOpacity>
           </View>
         </View>
+
         <View style={styles.tabContainer}>
           <TouchableOpacity
             onPress={() => setPhotoTabActive(true)}

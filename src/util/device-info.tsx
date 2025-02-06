@@ -1,3 +1,4 @@
+import {Alert} from 'react-native';
 import DeviceInfo from 'react-native-device-info';
 
 // Function to fetch all device information
@@ -51,5 +52,5 @@ export const fetchDeviceInfo = async () => {
 };
 
 export const fetchVersionInfo = () => {
-  return DeviceInfo.getVersion();
+  Alert.alert(`App Version: v${DeviceInfo.getVersion()}`);
 };

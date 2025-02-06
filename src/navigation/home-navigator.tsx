@@ -6,6 +6,7 @@ import Verify from '../screens/main-screens/verify-screen/verify-screen';
 import VideoLibrary from '../screens/video-library/video-library';
 import PhotoLibrary from '../screens/photo-library/photo-library';
 import FeedbackComponent from '../screens/main-screens/feedback/feedback';
+import Goto from '../screens/main-screens/Goto';
 
 const Stack = createNativeStackNavigator();
 
@@ -15,6 +16,7 @@ const HomeStack: React.FC<any> = () => {
       initialRouteName={Paths.VideoCamera}
       screenOptions={{headerShown: false}}>
       <Stack.Screen name={Paths.VideoCamera} component={VideoCamera} />
+      <Stack.Screen name={Paths.Goto} component={Goto} />
       <Stack.Screen name={Paths.Verify} component={Verify} />
       <Stack.Screen name={Paths.VideoLibrary} component={VideoLibrary} />
       <Stack.Screen name={Paths.PhotoLibrary} component={PhotoLibrary} />

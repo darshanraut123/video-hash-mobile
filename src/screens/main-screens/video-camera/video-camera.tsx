@@ -4,6 +4,7 @@ import {
   Platform,
   PermissionsAndroid,
   GestureResponderEvent,
+  Animated,
 } from 'react-native';
 import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -45,7 +46,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import CustomError from '../../../components/custom-error';
 import styles, {options} from './styles';
 import {useIsForeground} from './use-is-foreground';
-import {fetchDeviceInfo} from '../../../util/device-info';
+import {fetchDeviceInfo, fetchVersionInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
 import {getUniqueId, saveToCameraRoll} from '../../../util/common';
 import eventEmitter from '../../../util/event-emitter';
@@ -55,7 +56,6 @@ export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
   const cameraRef = useRef<Camera | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [openSettings, setOpenSettings] = useState(false);
   const [isTorchOn, setIsTorchOn] = useState(false);
   const [timeDelay, setTimeDelay] = useState<any>(false);
   const [device, setDevice] = useState<CameraDevice>();
@@ -84,6 +84,7 @@ export default function VideoCamera({navigation}: any) {
   const [activeMode, setActiveMode] = useState<'photo' | 'video'>('video');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
   const format = useCameraFormat(device, [
     {fps: 30},
     {videoResolution: {width: 1280, height: 720}},
@@ -114,7 +115,7 @@ export default function VideoCamera({navigation}: any) {
   useEffect(() => {
     setTimeout(() => {
       setTimeDelay(true);
-    }, 2000);
+    }, 4000);
 
     const requestPermissions = async () => {
       const cameraPermission: string = await Camera.requestCameraPermission();
@@ -469,7 +470,7 @@ export default function VideoCamera({navigation}: any) {
       isRecordingShared.value = true;
       setIsRecording(true);
       handleStartStopwatch();
-      await cameraRef.current.startRecording({
+      cameraRef.current.startRecording({
         onRecordingFinished: async (finishedVideo: VideoFile) => {
           isRecordingShared.value = false;
           setIsRecording(false);
@@ -513,10 +514,6 @@ export default function VideoCamera({navigation}: any) {
         },
       });
     }
-  };
-
-  const gotoVerify = async () => {
-    navigation.navigate('Verify', {name: 'Verify'});
   };
 
   const stopRecording = () => {
@@ -717,146 +714,136 @@ export default function VideoCamera({navigation}: any) {
             onInitialized={() => handleCameraInitialized(true)} // Camera initialized callback
           />
 
-          <View style={[styles.settingContainer]}>
-            <TouchableOpacity onPress={() => setOpenSettings(!openSettings)}>
-              <MaterialIcons name="settings" color="#B0BEC5" size={36} />
-            </TouchableOpacity>
-          </View>
-
-          {isRecording && (
-            <View style={styles.stopwatchContainer}>
-              <Stopwatch
-                start={isStopwatchStart}
-                reset={resetStopwatch}
-                options={options}
-              />
-            </View>
-          )}
           <View style={styles.absQrcodeContainer}>
             <QrCodeComponent qrCodeData={qrCodeData} qrCodeRefs={qrCodeRefs} />
           </View>
+
           {isRecording && (
-            <View style={styles.qrcodeContainer}>
-              <QRCode
-                backgroundColor="white"
-                value={JSON.stringify(jsonObject)}
-                size={100}
-                getRef={ref => (qrCodeRef.current = ref)}
-              />
+            <>
+              <View style={styles.qrcodeContainer}>
+                <QRCode
+                  backgroundColor="white"
+                  value={JSON.stringify(jsonObject)}
+                  size={100}
+                  getRef={ref => (qrCodeRef.current = ref)}
+                />
+              </View>
+
+              <View style={styles.stopwatchContainer}>
+                <Stopwatch
+                  start={isStopwatchStart}
+                  reset={resetStopwatch}
+                  options={options}
+                />
+              </View>
+            </>
+          )}
+
+          {!isRecording && (
+            <View style={styles.topBar}>
+              <TouchableOpacity onPress={() => setIsTorchOn(prev => !prev)}>
+                <Icon
+                  name={isTorchOn ? 'flash' : 'flash-off'}
+                  size={24}
+                  color={isTorchOn ? 'yellow' : 'gainsboro'}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={fetchVersionInfo}>
+                <Text style={styles.headerText}>REALITY REGISTRY</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate(Paths.Goto)}>
+                <Icon name="menu" size={24} color="white" />
+              </TouchableOpacity>
             </View>
           )}
-          {isCameraInitialized && (
-            <View style={styles.buttonContainer}>
-              {activeMode === 'photo' ? (
+
+          <View style={styles.bottomBar}>
+            {!isRecording ? (
+              <View style={styles.toggleContainer}>
                 <TouchableOpacity
-                  onPress={takePhoto}
-                  style={styles.camera_button}>
-                  <Icon name="camera-outline" size={50} color="white" />
+                  onPress={() => setActiveMode('photo')}
+                  style={[
+                    styles.toggleButton,
+                    activeMode === 'photo' && styles.active,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.toggleText,
+                      activeMode === 'photo' && styles.activeText,
+                    ]}>
+                    Photo
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setActiveMode('video')}
+                  style={[
+                    styles.toggleButton,
+                    activeMode === 'video' && styles.active,
+                  ]}>
+                  <Text
+                    style={[
+                      styles.toggleText,
+                      activeMode === 'video' && styles.activeText,
+                    ]}>
+                    Video
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View />
+            )}
+
+            <View style={styles.bottomBtnContainer}>
+              {!isRecording ? (
+                <TouchableOpacity
+                  onPress={() => navigation.navigate(Paths.VideoLibrary)}>
+                  <Icon name="image-outline" size={50} color="white" />
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity
-                  onPress={startStopRecording}
-                  style={
-                    isRecording
-                      ? styles.stop_recording_button
-                      : styles.start_recording_button
-                  }>
-                  {isRecording ? (
-                    <Icon name="stop" size={50} color="white" />
-                  ) : (
-                    <Icon name="videocam-outline" size={50} color="white" />
-                  )}
-                </TouchableOpacity>
+                <View />
               )}
 
-              {!isRecording && (
-                <TouchableOpacity
-                  onPress={() => navigation.navigate(Paths.VideoLibrary)}
-                  style={styles.library_button_left}>
-                  <Icon name="albums" size={40} color="#00ACC1" />
-                </TouchableOpacity>
+              {isCameraInitialized && (
+                <>
+                  {activeMode === 'photo' ? (
+                    <TouchableOpacity
+                      onPress={takePhoto}
+                      style={styles.captureButton}>
+                      <View style={styles.innerCaptureButton} />
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity
+                      onPress={startStopRecording}
+                      style={
+                        isRecording ? styles.stopButton : styles.recordButton
+                      }>
+                      <View
+                        style={
+                          isRecording
+                            ? styles.stopButtonInner
+                            : styles.innerRecordButton
+                        }
+                      />
+                    </TouchableOpacity>
+                  )}
+                </>
               )}
-              {!isRecording && (
+              {!isRecording ? (
                 <TouchableOpacity
-                  onPress={gotoVerify}
-                  style={styles.library_button_right}>
-                  <Icon name="finger-print" size={40} color="#00ACC1" />
+                  onPress={() =>
+                    setCameraPosition(prev =>
+                      prev === 'back' ? 'front' : 'back',
+                    )
+                  }>
+                  <Icon name="camera-reverse" size={50} color="white" />
                 </TouchableOpacity>
+              ) : (
+                <View />
               )}
-              <Toast />
             </View>
-          )}
-          <View style={styles.toggleContainer}>
-            <TouchableOpacity
-              onPress={() => setActiveMode('photo')}
-              style={[
-                styles.toggleButton,
-                activeMode === 'photo' && styles.active,
-              ]}>
-              <Text
-                style={[
-                  styles.toggleText,
-                  activeMode === 'photo' && styles.activeText,
-                ]}>
-                Photo
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => setActiveMode('video')}
-              style={[
-                styles.toggleButton,
-                activeMode === 'video' && styles.active,
-              ]}>
-              <Text
-                style={[
-                  styles.toggleText,
-                  activeMode === 'video' && styles.activeText,
-                ]}>
-                Video
-              </Text>
-            </TouchableOpacity>
           </View>
         </>
       )}
-
-      <CustomModal
-        infoModalVisible={openSettings}
-        setInfoModalVisible={setOpenSettings}
-        animationType="slide"
-        transparent={true}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalHeading}>Settings</Text>
-          <View style={styles.divider} />
-
-          <TouchableOpacity
-            onPress={() => setIsTorchOn(!isTorchOn)}
-            style={styles.modalToggleContainer}>
-            <View>
-              <Text style={styles.toggleLabel}>Flashlight Toogle</Text>
-            </View>
-            <View
-              style={[
-                styles.radioButton,
-                isTorchOn ? styles.radioButtonActive : null,
-              ]}
-            />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() =>
-              setCameraPosition(prev => (prev === 'back' ? 'front' : 'back'))
-            }
-            style={styles.modalToggleContainer}>
-            <Text style={styles.toggleLabel}>Camera Switch</Text>
-            <View
-              style={[
-                styles.radioButton,
-                cameraPosition === 'front' ? styles.radioButtonActive : null,
-              ]}
-            />
-          </TouchableOpacity>
-        </View>
-      </CustomModal>
     </View>
   );
 }

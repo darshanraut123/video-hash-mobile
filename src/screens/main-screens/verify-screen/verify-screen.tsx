@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-  Modal,
-} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity, Alert} from 'react-native';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
@@ -23,10 +16,8 @@ import {
   getVideoDuration,
 } from '../../../util/ffmpeg-util';
 import {calculateHammingDistance, percentageMatch} from '../../../util/common';
-import {useAuth} from '../../../components/auth-provider';
 import * as Progress from 'react-native-progress';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import Video from 'react-native-video';
 import {Paths} from '../../../navigation/path';
 import Share from 'react-native-share';
@@ -43,7 +34,6 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   const [uri, setUri] = React.useState<any>(null);
   const canvasRef = React.useRef<any>();
   let currentSegmentInfo: any = null;
-  const {logout} = useAuth(); // Get login status from AuthContext
   const routeParams = route.params; // Extract path from route.params
 
   React.useEffect(() => {
@@ -572,10 +562,6 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     }
   };
 
-  const showVersion = () => {
-    Alert.alert(`App Version: v${fetchVersionInfo()}`);
-  };
-
   return (
     <>
       {isLoaderActive && <Loader loaderText={isLoaderActive} />}
@@ -594,10 +580,10 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
         />
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={showVersion}>
+          <TouchableOpacity onPress={fetchVersionInfo}>
             <Text style={styles.headerText}>REALITY REGISTRY</Text>
           </TouchableOpacity>
-          <View style={styles.headerIcons}>
+          {/* <View style={styles.headerIcons}>
             <TouchableOpacity
               style={styles.icon}
               onPress={() => navigation.navigate(Paths.VideoCamera)}>
@@ -608,28 +594,10 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
               style={styles.icon}>
               <MaterialIcons name="feedback" size={24} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() =>
-                Alert.alert(
-                  'Logout', // Title of the alert
-                  'Are you sure you want to continue?', // Message in the alert
-                  [
-                    {
-                      text: 'Cancel', // Cancel button
-                      style: 'cancel', // The cancel button style
-                    },
-                    {
-                      text: 'OK', // OK button
-                      onPress: logout,
-                    },
-                  ],
-                  {cancelable: true}, // Allows closing the alert by tapping outside
-                )
-              }
-              style={styles.icon}>
-              <Icon name="power" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          </View> */}
+          <TouchableOpacity onPress={() => navigation.navigate(Paths.Goto)}>
+            <Icon name="menu" size={24} color="#007BFF" />
+          </TouchableOpacity>
         </View>
         <TouchableOpacity style={styles.box} onPress={pickAndVerifyVideo}>
           <Icon name="cloud-upload-outline" size={32} color="#007BFF" />

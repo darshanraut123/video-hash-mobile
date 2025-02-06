@@ -6,35 +6,6 @@ export default StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: 'black',
   },
-  buttonContainer: {
-    display: 'flex',
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    position: 'absolute',
-    bottom: 50,
-  },
-  start_recording_button: {
-    padding: 15,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#00796B',
-  },
-  stop_recording_button: {
-    padding: 15,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#CC0033',
-  },
-  camera_button: {
-    padding: 15,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'gray',
-  },
   text: {
     fontSize: 18,
     color: 'white',
@@ -49,17 +20,7 @@ export default StyleSheet.create({
     position: 'absolute',
     zIndex: -1,
   },
-  library_button_left: {
-    position: 'absolute', // Position it absolutely
-    left: 50, // Align it to the left
-    bottom: 10, // Align it to the bottom
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0', // Customize button background color
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   subButtonsContainer: {
     bottom: 40,
     width: 40,
@@ -88,20 +49,10 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  library_button_right: {
-    position: 'absolute', // Position it absolutely
-    right: 50, // Align it to the left
-    bottom: 10, // Align it to the bottom
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#f0f0f0', // Customize button background color
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   stopwatchContainer: {
     position: 'absolute',
-    bottom: 180,
+    bottom: 120,
     width: '100%',
     display: 'flex',
     justifyContent: 'center',
@@ -121,23 +72,10 @@ export default StyleSheet.create({
     bottom: -100,
   },
 
-  settingContainer: {
-    position: 'absolute',
-    top: 50,
-    left: 25,
-    height: 50,
-    width: 50,
-    borderRadius: 25,
-  },
-
   toggleContainer: {
-    position: 'absolute',
-    bottom: 145,
     flexDirection: 'row',
-    borderRadius: 30,
     width: '50%',
     height: 30,
-    backgroundColor: '#B0BEC5',
     alignSelf: 'center',
   },
   saveDiscardContainer: {
@@ -149,11 +87,8 @@ export default StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 30,
   },
   active: {
-    backgroundColor: '#00ACC1',
-    borderWidth: 2,
     borderColor: '#37474F',
   },
   toggleText: {
@@ -163,7 +98,7 @@ export default StyleSheet.create({
     textTransform: 'uppercase',
   },
   activeText: {
-    color: '#37474F',
+    color: 'yellow',
   },
   previewContainer: {
     flex: 1,
@@ -245,6 +180,81 @@ export default StyleSheet.create({
     borderBottomColor: 'gainsboro',
     marginTop: 10,
     marginBottom: 20,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    position: 'absolute',
+    top: 0,
+    width: '100%',
+  },
+  headerText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#007BFF',
+  },
+  bottomBar: {
+    flexDirection: 'column',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    paddingVertical: 20,
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+  },
+  bottomBtnContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 20,
+    width: '100%',
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    backgroundColor: 'red',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  innerCaptureButton: {
+    width: 50,
+    height: 50,
+    backgroundColor: 'white',
+    borderRadius: 50,
+  },
+  recordButton: {
+    width: 70,
+    height: 70,
+    backgroundColor: 'white',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  innerRecordButton: {
+    width: 50,
+    height: 50,
+    backgroundColor: 'red',
+    borderRadius: 50,
+  },
+  stopButton: {
+    width: 70,
+    height: 70,
+    backgroundColor: 'red',
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stopButtonInner: {
+    width: 40,
+    height: 40,
+    backgroundColor: 'white',
+    borderRadius: 8,
   },
 });
 
