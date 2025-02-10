@@ -1,6 +1,9 @@
 import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import {useEffect, useState} from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import {StackNavigationProp} from '@react-navigation/stack';
+import {AppState} from 'react-native';
+import {useNavigation} from '@react-navigation/native';
+import {Paths} from '../../../navigation/path';
 
 export type ShareFile = {
   filePath?: string;
@@ -12,7 +15,15 @@ export type ShareFile = {
   extension?: string;
 };
 
+type RootStackParamList = {
+  [Paths.Verify]: {isPhoto: boolean; path: string};
+};
+
 export const useGetShare = () => {
+  const navigation =
+    useNavigation<
+      StackNavigationProp<RootStackParamList, any>
+    >();
   const [share, setShare] = useState<ShareFile[] | undefined>(undefined);
 
   useEffect(() => {
@@ -20,11 +31,18 @@ export const useGetShare = () => {
       ReceiveSharingIntent.getReceivedFiles(
         (files: ShareFile[]) => {
           if (files.length) {
-            console.log('Received Files', files);
+            console.log('Received Files ✅', files);
             setShare(files);
-            AsyncStorage.setItem('intent', JSON.stringify(files))
-              .then(() => console.log('Intent data saved successfully!'))
-              .catch(err => console.error('Error saving intent data:', err));
+            if (files) {
+              const file: any = files[0];
+              console.log(JSON.stringify(file));
+              if (file?.mimeType && file?.filePath) {
+                navigation.navigate(Paths.Verify, {
+                  isPhoto: file.mimeType.includes('image'),
+                  path: file.filePath,
+                });
+              }
+            }
           }
         },
         (error: any) => {
@@ -35,6 +53,16 @@ export const useGetShare = () => {
     };
 
     handleReceivedFiles();
+
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (nextAppState === 'active') {
+        handleReceivedFiles();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, []);
 
   return share;

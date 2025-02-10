@@ -9,12 +9,10 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 class MainActivity : ReactActivity() {
 
   override fun onNewIntent(intent: Intent?) {
-        if (intent == null) return // Safeguard against null intent
-        super.onNewIntent(intent)
-        // Ensure the activity is treated as part of a new task
-        val newIntent = Intent(this, MainActivity::class.java)
-        newIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        setIntent(newIntent)
+      super.onNewIntent(intent)
+      if (intent != null) {
+          setIntent(intent) // Set the new intent so React Native can access it
+      }
     }
 
   /**

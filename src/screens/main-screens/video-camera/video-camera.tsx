@@ -51,6 +51,7 @@ import {Image} from 'react-native';
 import {getUniqueId, saveToCameraRoll} from '../../../util/common';
 import eventEmitter from '../../../util/event-emitter';
 import CustomModal from '../../../components/custom-modal';
+import { useGetShare } from './useGetShare';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -91,6 +92,8 @@ export default function VideoCamera({navigation}: any) {
     {photoResolution: {width: 1280, height: 720}},
   ]);
 
+  useGetShare();
+
   useEffect(() => {
     isRecordingShared.value = isRecording;
   }, [isRecording, isRecordingShared]);
@@ -123,29 +126,6 @@ export default function VideoCamera({navigation}: any) {
         await Camera.requestMicrophonePermission(); // For video capturing
       console.log('cameraPermission==> ' + cameraPermission);
       console.log('microphonePermission==> ' + microphonePermission);
-
-      async function getIntentToVerify() {
-        try {
-          let files: any = await AsyncStorage.getItem('intent');
-          console.log('Retrieved data:', files);
-          await AsyncStorage.removeItem('intent');
-          if (files) {
-            files = JSON.parse(files);
-            const file: any = files[0];
-            console.log(JSON.stringify(file));
-            if (file?.mimeType && file?.filePath) {
-              navigation.navigate(Paths.Verify, {
-                isPhoto: file.mimeType.includes('image'),
-                path: file.filePath,
-              });
-              console.log('NAVIGATED TO VERIFY');
-            }
-          }
-        } catch (error) {
-          console.error('Error retrieving data:', error);
-        }
-      }
-      getIntentToVerify();
 
       if (Platform.OS === 'ios') {
         const auth = await Geolocation.requestAuthorization('whenInUse');
