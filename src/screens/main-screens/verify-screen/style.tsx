@@ -5,61 +5,44 @@ export default StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
     padding: 16,
-    paddingTop: 40,
   },
   noRecordsConyainer: {
     display: 'flex',
     alignItems: 'center',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007BFF',
-  },
   headerIcons: {
     flexDirection: 'row',
     gap: 16,
   },
-  box: {
-    width: '100%', // Width of the box
-    height: 100, // Height of the box
+  uploadBtn: {
+    height: 50, // Height of the box
+    width: '100%',
     borderRadius: 12, // Rounded corners
     borderWidth: 2, // Border thickness
     borderColor: '#007BFF', // Border color (blue)
+    backgroundColor: '#007BFF', // Border color (blue)
     justifyContent: 'center', // Align content vertically
     alignItems: 'center', // Align content horizontally
-    backgroundColor: '#F0F8FF', // Light background color
-    marginTop: 50,
+    zIndex: 1,
+    position: 'absolute',
+    bottom: 20,
+    left: 15,
   },
-  boxTxt: {
+  btnTxt: {
     fontSize: 14,
-    color: 'red',
+    fontWeight: '500',
+    color: '#FFF',
+  },
 
-    padding: 10,
-  },
-  icon: {
-    width: 50,
-    height: 50,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#36454F',
-    borderRadius: 25,
-  },
   imageContainer: {
     position: 'relative',
     marginBottom: 16,
   },
   image: {
     width: '100%',
-    height: 200,
+    height: 300,
     borderRadius: 8,
+    backgroundColor: 'black',
   },
   confidenceBadge: {
     position: 'absolute',
@@ -91,10 +74,12 @@ export default StyleSheet.create({
     fontWeight: 'bold',
   },
   confidenceTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 16,
     marginTop: 10,
+    textAlign: 'center',
+    color: 'black',
   },
   tableContainer: {
     borderWidth: 1,
@@ -119,17 +104,46 @@ export default StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333333',
-    marginVertical: 10,
+  canvasContainer: {
+    backgroundColor: 'white',
+    height: 32,
+    width: 32,
+    position: 'absolute',
+    bottom: -100,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#666666',
+  uploadTxt: {
+    padding: 35,
     textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 20,
+    flexWrap: 'wrap',
+    lineHeight: 20,
+  },
+
+  sectionContainer: {
+    marginVertical: 5,
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  headerText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  content: {
+    padding: 10,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginVertical: 4,
+  },
+  label: {
+    fontWeight: 'bold',
+    color: '#555',
+  },
+  value: {
+    color: '#333',
   },
 });

@@ -4,7 +4,6 @@ import {
   Platform,
   PermissionsAndroid,
   GestureResponderEvent,
-  Animated,
 } from 'react-native';
 import {StyleSheet, View, Text, TouchableOpacity} from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -12,8 +11,6 @@ import Canvas, {Image as CanvasImage} from 'react-native-canvas';
 import timer from 'react-native-timer';
 import {Stopwatch} from 'react-native-stopwatch-timer';
 import {useIsFocused} from '@react-navigation/native';
-import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import Toast from 'react-native-toast-message';
 import {
   Camera,
   useCameraDevices,
@@ -50,8 +47,7 @@ import {fetchDeviceInfo, fetchVersionInfo} from '../../../util/device-info';
 import {Image} from 'react-native';
 import {getUniqueId, saveToCameraRoll} from '../../../util/common';
 import eventEmitter from '../../../util/event-emitter';
-import CustomModal from '../../../components/custom-modal';
-import { useGetShare } from './useGetShare';
+import {useGetShare} from './useGetShare';
 
 export default function VideoCamera({navigation}: any) {
   const devices: any = useCameraDevices();
@@ -85,7 +81,6 @@ export default function VideoCamera({navigation}: any) {
   const [activeMode, setActiveMode] = useState<'photo' | 'video'>('video');
   const [capturedPhoto, setCapturedPhoto] = useState<string | null>(null);
   const [isPreview, setIsPreview] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
   const format = useCameraFormat(device, [
     {fps: 30},
     {videoResolution: {width: 1280, height: 720}},
@@ -172,7 +167,7 @@ export default function VideoCamera({navigation}: any) {
 
     FFmpegKitConfig.init()
       .then(() => {
-        FFmpegKitConfig.setLogLevel(Level.AV_LOG_INFO);
+        FFmpegKitConfig.setLogLevel(Level.AV_LOG_DEBUG);
         console.log('FFmpegKit Initialized');
       })
       .catch(error => {
@@ -411,9 +406,6 @@ export default function VideoCamera({navigation}: any) {
           qrCodePaths,
         );
         console.log('QR Code embedded video path:', videoOutputPath);
-        const uri = await saveToCameraRoll(videoOutputPath, 'video');
-        console.log('Final QR Code embedded video path:', uri);
-
         const segmentFramePaths: any = await extractSegmentFramesForPHash(
           videoOutputPath,
         );
@@ -467,7 +459,7 @@ export default function VideoCamera({navigation}: any) {
               path: `file://${
                 Platform.OS === 'ios'
                   ? RNFS.LibraryDirectoryPath
-                  : RNFS.DocumentDirectoryPath
+                  : RNFS.ExternalStorageDirectoryPath + '/Movies'
               }/video_${currentTime}.mov`,
             },
             status: 'pending',

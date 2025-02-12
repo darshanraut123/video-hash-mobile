@@ -1,4 +1,4 @@
-import {View, Text, ScrollView, TouchableOpacity, Alert} from 'react-native';
+import {View, Text, ScrollView, TouchableOpacity} from 'react-native';
 import React from 'react';
 import {launchImageLibrary} from 'react-native-image-picker';
 import RNFS from 'react-native-fs';
@@ -16,16 +16,14 @@ import {
   getVideoDuration,
 } from '../../../util/ffmpeg-util';
 import {calculateHammingDistance, percentageMatch} from '../../../util/common';
-import * as Progress from 'react-native-progress';
-import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 import Video from 'react-native-video';
 import {Paths} from '../../../navigation/path';
-import Share from 'react-native-share';
 import Toast from 'react-native-toast-message';
 import styles from './style';
 import {Image} from 'react-native';
-import {fetchVersionInfo} from '../../../util/device-info';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Header from '../../../components/header';
+import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 
 const VerifyScreen: React.FC<any> = ({route, navigation}) => {
   const [videoRecordFoundInfo, setVideoRecordFoundInfo] =
@@ -91,12 +89,6 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
       console.log(
         JSON.stringify({...response.document, percentageHammingDistance}),
       );
-      Toast.show({
-        type: 'success',
-        text1: 'Found a match',
-        text2: 'We found a matching record 👋',
-        position: 'bottom',
-      });
     } else {
       console.log({
         email: user.email,
@@ -340,12 +332,6 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
           originalVideoHashes: dbHashSegments,
           averageDistance,
         });
-        Toast.show({
-          type: 'success',
-          text1: 'Found a match',
-          text2: 'We found a matching record 👋',
-          position: 'bottom',
-        });
       } else {
         await saveVerifyLogs({
           verifierEmail: user.email,
@@ -532,200 +518,154 @@ const VerifyScreen: React.FC<any> = ({route, navigation}) => {
     setIsLoaderActive(null);
   }
 
-  const getColor = (avgDist: number) => {
-    switch (true) {
-      case avgDist < 50:
-        return '#e53416'; // Red
-      case avgDist < 80:
-        return '#e2e516'; // Yellow
-      case avgDist >= 80:
-        return '#77e60c'; // Green
-      default:
-        return '#e53416'; // Default Red
-    }
-  };
-
-  const shareVideo = async () => {
-    try {
-      if (!uri) {
-        return;
-      }
-      // Share options
-      const options = {
-        url: uri, // Share video using its file URI
-        type: 'video/*', // Specify the file type
-      };
-
-      await Share.open(options);
-    } catch (error) {
-      console.error('Error sharing video:', error);
-    }
-  };
-
   return (
     <>
-      {isLoaderActive && <Loader loaderText={isLoaderActive} />}
-
+      <Header
+        screenName="Upload & Score"
+        onBackArrowPress={() => navigation.goBack()}
+        onMenuPress={() => navigation.navigate(Paths.Goto)}
+      />
       <View style={styles.container}>
-        <Canvas
-          // eslint-disable-next-line react-native/no-inline-styles
-          style={{
-            backgroundColor: 'white',
-            height: 32,
-            width: 32,
-            position: 'absolute',
-            bottom: -100,
-          }}
-          ref={canvasRef}
-        />
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={fetchVersionInfo}>
-            <Text style={styles.headerText}>REALITY REGISTRY</Text>
+        <Canvas style={styles.canvasContainer} ref={canvasRef} />
+
+        {!isLoaderActive && (
+          <TouchableOpacity
+            style={styles.uploadBtn}
+            onPress={pickAndVerifyVideo}>
+            <Text style={styles.btnTxt}>New Upload</Text>
           </TouchableOpacity>
-          {/* <View style={styles.headerIcons}>
-            <TouchableOpacity
-              style={styles.icon}
-              onPress={() => navigation.navigate(Paths.VideoCamera)}>
-              <Icon name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => navigation.navigate(Paths.FeedBack)}
-              style={styles.icon}>
-              <MaterialIcons name="feedback" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View> */}
-          <TouchableOpacity onPress={() => navigation.navigate(Paths.Goto)}>
-            <Icon name="menu" size={24} color="#007BFF" />
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity style={styles.box} onPress={pickAndVerifyVideo}>
-          <Icon name="cloud-upload-outline" size={32} color="#007BFF" />
-        </TouchableOpacity>
-        <Text style={styles.boxTxt}>
-          Tap the upload icon to select a video or an image to verify.
-        </Text>
-        {/* Image with Confidence Score */}
-        {videoRecordFoundInfo ? (
-          <ScrollView>
+        )}
+
+        {uri ? (
+          <>
             <View style={styles.imageContainer}>
+              {isLoaderActive && <Loader loaderText="Uploading" />}
               {['.png', '.jpg', '.jpeg'].some(ext =>
                 uri.toLowerCase().endsWith(ext),
               ) ? (
-                <Image source={{uri}} style={styles.image} resizeMode="cover" />
+                <Image
+                  source={{uri}}
+                  style={styles.image}
+                  resizeMode="contain"
+                />
               ) : (
                 <Video
                   source={{uri}}
                   style={styles.image}
-                  resizeMode="cover"
-                  paused={true} // Pause for thumbnail display only
+                  resizeMode="contain"
                 />
               )}
-
-              <View
-                // eslint-disable-next-line react-native/no-inline-styles
-                style={{
-                  ...styles.confidenceBadge,
-                  backgroundColor: getColor(
-                    videoRecordFoundInfo?.averageDistance,
-                  ),
-                }}>
-                <Text style={styles.confidenceText}>
-                  {Math.round(videoRecordFoundInfo?.averageDistance)}
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.shareButton} onPress={shareVideo}>
-                <Text style={styles.shareButtonText}>Share</Text>
-              </TouchableOpacity>
             </View>
+            {!isLoaderActive && !videoRecordFoundInfo && (
+              <Text style={styles.uploadTxt}>No records found </Text>
+            )}
+          </>
+        ) : (
+          <View>
+            <Text style={styles.uploadTxt}>
+              {' '}
+              Upload a video or photo to receive a confidence score
+            </Text>
+          </View>
+        )}
 
-            <Progress.Bar
-              progress={Math.round(videoRecordFoundInfo?.averageDistance / 100)}
-              width={200}
-              color={getColor(videoRecordFoundInfo?.averageDistance)}
-              borderColor="gray"
-            />
+        {videoRecordFoundInfo && (
+          <ScrollView>
             <Text style={styles.confidenceTitle}>
-              Confidence Score:
+              Confidence Score:{' '}
               {Math.round(videoRecordFoundInfo?.averageDistance)}
             </Text>
 
-            <View style={styles.tableContainer}>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Id:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo._id}
-                </Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Author Name:</Text>
-                <Text style={styles.tableValue}>
+            <View style={styles.container}>
+              {/* Registered Information */}
+
+              <View style={styles.row}>
+                <Text style={styles.label}>Registered by:</Text>
+                <Text style={styles.value}>
                   {videoRecordFoundInfo.user?.name}
                 </Text>
               </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Author Email:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo.user?.email}
-                </Text>
-              </View>
-              {videoRecordFoundInfo?.duration && (
-                <View style={styles.tableRow}>
-                  <Text style={styles.tableLabel}>Duration:</Text>
-                  <Text style={styles.tableValue}>
-                    {videoRecordFoundInfo.duration}
-                  </Text>
-                </View>
-              )}
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Latitude:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo.gps?.latitude}
-                </Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Longitude:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo.gps?.longitude}
-                </Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text style={styles.tableLabel}>Altitude:</Text>
-                <Text style={styles.tableValue}>
-                  {videoRecordFoundInfo.gps.altitude}
+
+              <View style={styles.row}>
+                <Text style={styles.label}>Registered on:</Text>
+                <Text style={styles.value}>
+                  {new Date(videoRecordFoundInfo.createdAt).toDateString()}
                 </Text>
               </View>
 
-              {Object.keys(videoRecordFoundInfo.device).map((key: any) => (
-                <View key={key} style={styles.tableRow}>
-                  <Text style={styles.tableLabel}>{key}:</Text>
-                  <Text style={styles.tableValue}>
-                    {JSON.stringify(videoRecordFoundInfo.device[`${key}`])}
-                  </Text>
-                </View>
-              ))}
+              {/* Expandable Sections */}
+              <ExpandableSection title="Metadata" data={videoRecordFoundInfo} />
             </View>
-            <View style={{height: 50}} />
           </ScrollView>
-        ) : (
-          <View style={[styles.container, styles.noRecordsConyainer]}>
-            {/* Replace the image URI with a proper no-records icon */}
-            <Image
-              source={{
-                uri: 'https://cdn-icons-png.flaticon.com/512/753/753345.png', // Example icon
-              }}
-              style={styles.icon}
-            />
-            <Text style={styles.title}>No Records to show</Text>
-            <Text style={styles.subtitle}>
-              There are no records to display right now. Please select a video
-              or an image!
-            </Text>
-          </View>
         )}
         <Toast />
       </View>
     </>
+  );
+};
+
+const ExpandableSection = ({title, data}: any) => {
+  const [expanded, setExpanded] = React.useState(false);
+
+  return (
+    <View style={styles.sectionContainer}>
+      {/* Header with chevron */}
+      <TouchableOpacity
+        style={styles.header}
+        onPress={() => setExpanded(!expanded)}>
+        <Text style={styles.label}>{title}</Text>
+        <Icon
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color="#000"
+        />
+      </TouchableOpacity>
+
+      {/* Expandable Content */}
+      {expanded && (
+        <View style={styles.content}>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Id:</Text>
+            <Text style={styles.tableValue}>{data._id}</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Author Name:</Text>
+            <Text style={styles.tableValue}>{data.user?.name}</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Author Email:</Text>
+            <Text style={styles.tableValue}>{data.user?.email}</Text>
+          </View>
+          {data?.duration && (
+            <View style={styles.tableRow}>
+              <Text style={styles.tableLabel}>Duration:</Text>
+              <Text style={styles.tableValue}>{data.duration}</Text>
+            </View>
+          )}
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Latitude:</Text>
+            <Text style={styles.tableValue}>{data.gps?.latitude}</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Longitude:</Text>
+            <Text style={styles.tableValue}>{data.gps?.longitude}</Text>
+          </View>
+          <View style={styles.tableRow}>
+            <Text style={styles.tableLabel}>Altitude:</Text>
+            <Text style={styles.tableValue}>{data.gps.altitude}</Text>
+          </View>
+
+          {Object.keys(data.device).map((key: any) => (
+            <View key={key} style={styles.tableRow}>
+              <Text style={styles.tableLabel}>{key}:</Text>
+              <Text style={styles.tableValue}>
+                {JSON.stringify(data.device[`${key}`])}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   );
 };
 

@@ -13,12 +13,13 @@ import {saveFeedback} from '../../../service/hash-requests';
 import {Paths} from '../../../navigation/path';
 import Loader from '../../../components/loader';
 import Ionicon from 'react-native-vector-icons/Ionicons';
-import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
+import Header from '../../../components/header';
 
 const FeedbackComponent = ({navigation}: any) => {
   const [feedback, setFeedback] = useState('');
   const [isLoading, setLoading] = useState(false);
   const [selectedRating, setSelectedRating] = useState<any>(null);
+  const [isSubmitted, setIsSubmitted] = useState<any>(false);
 
   const handleSubmit = async () => {
     try {
@@ -37,12 +38,16 @@ const FeedbackComponent = ({navigation}: any) => {
       let user: any = await AsyncStorage.getItem('user');
       if (user) {
         user = JSON.parse(user);
-        const body = {email: user.email, message: feedback};
+        const body = {
+          email: user.email,
+          message: feedback,
+          rating: selectedRating,
+        };
         console.log(body);
         await saveFeedback(body);
         Alert.alert('Feedback Submitted', 'Thank you for your feedback!');
         setFeedback(''); // Clear the feedback after submission
-        navigation.navigate(Paths.VideoCamera);
+        setIsSubmitted(true);
       }
       setLoading(false);
     } catch (error) {
@@ -64,64 +69,74 @@ const FeedbackComponent = ({navigation}: any) => {
   } else {
     return (
       <>
-        <View style={styles.header}>
-          <Text style={styles.title}>REALITY REGISTRY</Text>
-          <TouchableOpacity onPress={() => navigation.navigate(Paths.Goto)}>
-            <Icon name="menu" size={24} color="#007BFF" />
-          </TouchableOpacity>
-        </View>
         <ScrollView>
-          <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.headerText}>LET US KNOW WHAT YOU THINK</Text>
+          <Header
+            screenName="Feedback"
+            onBackArrowPress={() => navigation.navigate(Paths.VideoCamera)}
+            onMenuPress={() => navigation.navigate(Paths.Goto)}
+          />
+          {isSubmitted ? (
+            <View style={styles.container}>
+              <View style={styles.tytxt}>
+                <Text>Thank you for your feedback</Text>
+              </View>
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={() => navigation.navigate(Paths.VideoCamera)}>
+                <Text style={styles.submitButtonText}>Close</Text>
+              </TouchableOpacity>
             </View>
+          ) : (
+            <View style={styles.container}>
+              {/* Rating Section */}
+              <Text style={styles.sectionTitle}>RATE YOUR EXPERIENCE</Text>
+              <View style={styles.ratingContainer}>
+                {ratings.map(rating => (
+                  <TouchableOpacity
+                    key={rating.value}
+                    onPress={() => setSelectedRating(rating.value)}
+                    style={styles.ratingItem}>
+                    <Ionicon
+                      name={
+                        selectedRating >= rating.value ? 'star' : 'star-outline'
+                      }
+                      size={30}
+                      color={
+                        selectedRating >= rating.value ? '#4285F4' : '#ccc'
+                      }
+                    />
 
-            {/* Rating Section */}
-            <Text style={styles.sectionTitle}>RATE YOUR EXPERIENCE</Text>
-            <View style={styles.ratingContainer}>
-              {ratings.map(rating => (
-                <TouchableOpacity
-                  key={rating.value}
-                  onPress={() => setSelectedRating(rating.value)}
-                  style={styles.ratingItem}>
-                  <Ionicon
-                    name={
-                      selectedRating >= rating.value ? 'star' : 'star-outline'
-                    }
-                    size={30}
-                    color={selectedRating >= rating.value ? '#4285F4' : '#ccc'}
-                  />
+                    <Text
+                      style={[
+                        styles.ratingLabel,
+                        selectedRating === rating.value && {color: '#4285F4'},
+                      ]}>
+                      {rating.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
 
-                  <Text
-                    style={[
-                      styles.ratingLabel,
-                      selectedRating === rating.value && {color: '#4285F4'},
-                    ]}>
-                    {rating.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+              {/* Comment Section */}
+              <Text style={styles.sectionTitle}>Comment or suggestion</Text>
+              <TextInput
+                style={styles.textInput}
+                placeholder="Enter text here"
+                value={feedback}
+                onChangeText={setFeedback}
+                multiline
+                numberOfLines={4}
+              />
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={handleSubmit}>
+                <Text style={styles.submitButtonText}>Submit feedback</Text>
+              </TouchableOpacity>
             </View>
-
-            {/* Comment Section */}
-            <Text style={styles.sectionTitle}>Comment or suggestion</Text>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Enter text here"
-              value={feedback}
-              onChangeText={setFeedback}
-              multiline
-              numberOfLines={4}
-            />
-
-            {/* Submit Button */}
-            <TouchableOpacity
-              style={styles.submitButton}
-              onPress={handleSubmit}>
-              <Text style={styles.submitButtonText}>Submit feedback</Text>
-            </TouchableOpacity>
-          </View>
+          )}
         </ScrollView>
       </>
     );
@@ -135,6 +150,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingBottom: 300,
+    backgroundColor: '#FFF',
   },
   header: {
     flexDirection: 'row',
@@ -176,7 +192,6 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 5,
     padding: 10,
-    backgroundColor: '#f9f9f9',
     textAlignVertical: 'top',
     minHeight: 100,
   },
@@ -206,6 +221,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#36454F',
     borderRadius: 25,
+  },
+  tytxt: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: 200,
   },
 });
 
