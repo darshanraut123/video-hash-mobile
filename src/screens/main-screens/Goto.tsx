@@ -4,7 +4,7 @@ import {Paths} from '../../navigation/path';
 import {useAuth} from '../../components/auth-provider';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import Header from '../../components/header';
+import Header from './../../components/Header';
 
 const Goto = ({navigation}: any) => {
   const {logout} = useAuth(); // Get login status from AuthContext

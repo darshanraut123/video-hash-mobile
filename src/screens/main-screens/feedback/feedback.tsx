@@ -13,7 +13,7 @@ import {saveFeedback} from '../../../service/hash-requests';
 import {Paths} from '../../../navigation/path';
 import Loader from '../../../components/loader';
 import Ionicon from 'react-native-vector-icons/Ionicons';
-import Header from '../../../components/header';
+import Header from './../../../components/Header';
 
 const FeedbackComponent = ({navigation}: any) => {
   const [feedback, setFeedback] = useState('');

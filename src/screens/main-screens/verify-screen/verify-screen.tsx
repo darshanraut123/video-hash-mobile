@@ -22,7 +22,7 @@ import Toast from 'react-native-toast-message';
 import styles from './style';
 import {Image} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from '../../../components/header';
+import Header from './../../../components/Header';
 import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
 
 const VerifyScreen: React.FC<any> = ({route, navigation}) => {
