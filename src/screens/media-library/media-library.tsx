@@ -1,18 +1,20 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TouchableOpacity, StyleSheet, Modal} from 'react-native';
+import {View, Text, TouchableOpacity, Modal} from 'react-native';
 import {NavigationProp} from '@react-navigation/native';
-import VideoList from './video-list';
+import MediaList from './media-list';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Share from 'react-native-share';
-import Icon from 'react-native-vector-icons/Ionicons'; // If you want to use vector icons
-import {getMyPhotos, getMyVideos} from '../../service/hash-requests';
+import Icon from 'react-native-vector-icons/Ionicons';
 import Toast from 'react-native-toast-message';
+import {Image} from 'react-native';
+import VideoPlayer from 'react-native-video-controls';
+
+import Header from '../../components/Header';
+import {getMyPhotos, getMyVideos} from '../../service/hash-requests';
 import {Paths} from '../../navigation/path';
 import Loader from '../../components/loader';
 import CustomModal from '../../components/custom-modal';
-import PhotoList from '../photo-library/photo-list';
-import {Image} from 'react-native';
-import VideoPlayer from 'react-native-video-controls';
+import styles from './library-styles';
 
 interface VideoLibraryProps {
   navigation: NavigationProp<any>;
@@ -31,20 +33,21 @@ export interface modalDataI {
   path: string;
   email: string;
   name: string;
-  duration: number;
+  duration?: number;
   createdAt: string;
 }
 
 const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
-  const [videos, setVideos] = useState<VideoInterface[]>([]);
-  const [photos, setPhotos] = useState<PhotoInterface[]>([]);
+  const [videos, setVideos] = useState<modalDataI[]>([]);
+  const [photos, setPhotos] = useState<modalDataI[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [infoModalVisible, setInfoModalVisible] = useState<modalDataI | null>(
     null,
   );
-  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
-  const [photoTabActive, setPhotoTabActive] = useState<boolean>(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{
+    type: string;
+    uri: string;
+  }>({type: '', uri: ''});
 
   useEffect(() => {
     const loadPhotos = async () => {
@@ -169,12 +172,11 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
 
   const shareVideo = async () => {
     try {
-      const selectedUri = selectedPhoto ? selectedPhoto : selectedVideo;
-      const content = selectedPhoto ? 'image' : 'video';
-      // Share options
+      const selectedUri = selectedMedia.uri;
+      const content = selectedMedia.type;
       const options = {
-        url: `file://${selectedUri}`, // Share video using its file URI
-        type: content + '/*', // Specify the file type
+        url: `file://${selectedUri}`,
+        type: content + '/*',
       };
 
       await Share.open(options);
@@ -183,8 +185,27 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     }
   };
 
+  const mediaSelectHandler = (uri: string, type: string) => {
+    setSelectedMedia({
+      uri,
+      type,
+    });
+  };
+
+  const medias: modalDataI[] = [...videos, ...photos];
+
+  const sortedMedias = medias.sort((a, b) => {
+    const dateA = a?.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b?.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
   return (
     <>
+      <Header
+        screenName="Library"
+        onBackArrowPress={() => navigation.navigate(Paths.VideoCamera)}
+      />
       <View style={styles.container}>
         <Toast />
         <CustomModal
@@ -218,49 +239,13 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
           </>
         </CustomModal>
         {isLoading && <Loader loaderText="Loading please wait..." />}
-        <View style={styles.header}>
-          <Text style={styles.headerText}>REALITY REGISTRY</Text>
-          <View style={styles.headerIcons}>
-            <TouchableOpacity onPress={() => navigation.navigate(Paths.Goto)}>
-              <Icon name="menu" size={24} color="#007BFF" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            onPress={() => setPhotoTabActive(true)}
-            style={{
-              ...styles.tabs,
-              backgroundColor: photoTabActive ? '#008ae6' : 'gainsboro',
-            }}>
-            <Text style={styles.tabsTxt}>Photo</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setPhotoTabActive(false)}
-            style={{
-              ...styles.tabs,
-              backgroundColor: !photoTabActive ? '#008ae6' : 'gainsboro',
-            }}>
-            <Text style={styles.tabsTxt}>Video</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={{width: '100%', marginTop: 10}}>
-          {photoTabActive ? (
-            <PhotoList
-              showPhotoInfo={showVideoInfo}
-              photos={photos}
-              onSelectPhoto={setSelectedPhoto}
-            />
-          ) : (
-            <VideoList
-              showVideoInfo={showVideoInfo}
-              videos={videos}
-              onSelectVideo={setSelectedVideo}
-            />
-          )}
-        </View>
-        {selectedVideo && (
+        <Text style={styles.subheading}>Your uploads</Text>
+        <MediaList
+          showVideoInfo={showVideoInfo}
+          medias={sortedMedias}
+          onSelect={mediaSelectHandler}
+        />
+        {selectedMedia.uri && (
           <Modal visible={true} transparent={false}>
             <View style={styles.videoPlayerContainer}>
               <TouchableOpacity
@@ -269,45 +254,30 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
                 <Icon name="share-outline" size={36} color="white" />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => setSelectedVideo(null)}
+                onPress={() => setSelectedMedia({type: '', uri: ''})}
                 style={styles.closeButton}>
                 <Icon name="close" size={36} color="white" />
               </TouchableOpacity>
-
-              <VideoPlayer
-                source={{uri: selectedVideo}}
-                style={styles.fullScreenVideo}
-                disableFullscreen
-                disableVolume
-                disableBack
-                onPlay={() => console.log('Video started')}
-                onPause={() => console.log('Video paused')}
-                onEnd={() => console.log('Video ended')}
-                onShowControls={() => console.log('onShowControls ended')}
-                onHideControls={() => console.log('onHideControls ended')}
-              />
-            </View>
-          </Modal>
-        )}
-
-        {selectedPhoto && (
-          <Modal visible={true} transparent={false}>
-            <View style={styles.videoPlayerContainer}>
-              <TouchableOpacity
-                onPress={() => shareVideo()}
-                style={[styles.closeButton, styles.shareBtn]}>
-                <Icon name="share-outline" size={36} color="white" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setSelectedPhoto(null)}
-                style={styles.closeButton}>
-                <Icon name="close" size={36} color="white" />
-              </TouchableOpacity>
-              <Image
-                source={{uri: 'file://' + selectedPhoto}}
-                style={styles.fullScreenVideo}
-                resizeMode="contain"
-              />
+              {selectedMedia.type === 'image' ? (
+                <Image
+                  source={{uri: 'file://' + selectedMedia.uri}}
+                  style={styles.fullScreenVideo}
+                  resizeMode="contain"
+                />
+              ) : (
+                <VideoPlayer
+                  source={{uri: selectedMedia.uri}}
+                  style={styles.fullScreenVideo}
+                  disableFullscreen
+                  disableVolume
+                  disableBack
+                  onPlay={() => console.log('Video started')}
+                  onPause={() => console.log('Video paused')}
+                  onEnd={() => console.log('Video ended')}
+                  onShowControls={() => console.log('onShowControls ended')}
+                  onHideControls={() => console.log('onHideControls ended')}
+                />
+              )}
             </View>
           </Modal>
         )}
@@ -317,90 +287,3 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
 };
 
 export default VideoLibrary;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    paddingTop: 40,
-  },
-  tabContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  tabs: {
-    width: '48%',
-    height: 50,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 10,
-  },
-  tabsTxt: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '400',
-    letterSpacing: 3,
-  },
-  videoPlayerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'black',
-  },
-  fullScreenVideo: {
-    width: '100%',
-    height: '80%',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 50,
-    right: 25,
-    zIndex: 1,
-  },
-  shareBtn: {left: 25},
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  headerText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#007BFF',
-  },
-  headerIcons: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  icon: {
-    width: 50,
-    height: 50,
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#36454F',
-    borderRadius: 25,
-  },
-
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  tableLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  tableValue: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'right',
-    paddingLeft: 10,
-  },
-});

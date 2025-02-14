@@ -1,7 +1,6 @@
 import React from 'react';
 import {View, Text, TouchableOpacity, StyleSheet} from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons'; // Make sure the correct icon set is imported
-import {SafeAreaView} from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import {fetchVersionInfo} from '../util/device-info';
 
@@ -13,19 +12,21 @@ const Header: React.FC<any> = ({
   return (
     <View style={styles.headerContainer}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={onBackArrowPress}>
+        <TouchableOpacity onPress={onBackArrowPress} style={styles.leftIcon}>
           <MaterialIcons name="arrow-back" size={24} color="#007BFF" />
         </TouchableOpacity>
-        {
-          <TouchableOpacity onPress={fetchVersionInfo}>
-            <Text style={styles.title}>
-              {screenName ? screenName : 'REALITY REGISTRY'}
-            </Text>
-          </TouchableOpacity>
-        }
-        <TouchableOpacity onPress={onMenuPress}>
-          <Icon name="menu" size={24} color="#007BFF" />
+        <TouchableOpacity style={styles.title} onPress={fetchVersionInfo}>
+          <Text style={styles.titleText}>
+            {screenName ? screenName : 'REALITY REGISTRY'}
+          </Text>
         </TouchableOpacity>
+        {onMenuPress ? (
+          <TouchableOpacity onPress={() => {}} style={styles.rightIcon}>
+            <Icon name="menu" size={24} color="#007BFF" />
+          </TouchableOpacity>
+        ) : (
+          <View style={{width: 24}} />
+        )}
       </View>
     </View>
   );
@@ -51,9 +52,23 @@ const styles = StyleSheet.create({
     paddingTop: 40,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#007AFF',
+    flexGrow: 1,
+  },
+  titleText: {
+    fontSize: 18,
+    color: '#292929',
+    textAlign: 'center',
+    fontFamily: "Poppins-Medium"
+  },
+  leftIcon: {
+    width: 24,
+    display: 'flex',
+    justifyContent: 'center',
+  },
+  rightIcon: {
+    width: 24,
+    display: 'flex',
+    justifyContent: 'center',
   },
 });
 
