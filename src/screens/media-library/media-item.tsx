@@ -58,6 +58,8 @@ const MediaItem: React.FC<VideoItemProps> = ({
 
   const duration = formatDuration(videoInfo?.duration);
 
+  const mediafilePath = uri ? (uri.startsWith("content") ? uri : `file://${uri}`) : 'file://'
+
   return (
     <TouchableOpacity
       style={[
@@ -69,7 +71,7 @@ const MediaItem: React.FC<VideoItemProps> = ({
           marginBottom,
         },
       ]}
-      onPress={() => onSelect(uri, videoInfo?.duration ? "video" : "image")}>
+      onPress={() => onSelect(mediafilePath, videoInfo?.duration ? "video" : "image")}>
       <View style={styles.thumbnailContainer}>
         {videoInfo?.duration ? (
           <Video
@@ -83,7 +85,7 @@ const MediaItem: React.FC<VideoItemProps> = ({
           />
         ) : (
           <Image
-            source={{uri: 'file://' + uri}}
+            source={{uri: mediafilePath}}
             style={styles.thumbnail}
             resizeMode="cover"
           />

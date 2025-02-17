@@ -141,10 +141,21 @@ export default function VideoCamera({navigation}: any) {
           {enableHighAccuracy: true, timeout: 15000, maximumAge: 10000},
         );
       } else if (Platform.OS === 'android') {
-        await PermissionsAndroid.request(
+        const permissions = [
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        );
-        if (PermissionsAndroid.RESULTS.GRANTED === 'granted') {
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES,
+          PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO,
+        ];
+
+        if (Platform.Version < 33) {
+          permissions.push(
+            PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+            PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
+          );
+        }
+        
+        const results = await PermissionsAndroid.requestMultiple(permissions)
+        if (Object.values(results).every((res: string)=> res === 'granted')) {
           // Get GPS data
           Geolocation.getCurrentPosition(
             position => {
@@ -405,6 +416,7 @@ export default function VideoCamera({navigation}: any) {
           payload.path,
           qrCodePaths,
         );
+        const savedUri = await saveToCameraRoll(videoOutputPath, 'video');
         console.log('QR Code embedded video path:', videoOutputPath);
         const segmentFramePaths: any = await extractSegmentFramesForPHash(
           videoOutputPath,
@@ -417,7 +429,7 @@ export default function VideoCamera({navigation}: any) {
           message: 'Hello from video-camera component!',
           taskId,
           segmentFramePaths,
-          videoOutputPath,
+          videoOutputPath: savedUri,
           payload,
           latitude: locationRef.current?.latitude,
           longitude: locationRef.current?.longitude,
@@ -558,8 +570,11 @@ export default function VideoCamera({navigation}: any) {
       });
       console.log('Photo Captured', `Photo saved to: ${photo.path}`);
 
-      setCapturedPhoto(photo.path); // Set the captured photo path
-      setIsPreview(true); // Show the preview screen
+      setCapturedPhoto(photo.path);
+
+      console.log("📸", photo.path);
+
+      setIsPreview(true);
     } catch (error) {
       console.error('Error taking photo:', error);
     }
@@ -572,17 +587,13 @@ export default function VideoCamera({navigation}: any) {
         photoHash = photoHash[0];
         console.log(photoHash);
         const photoId = getUniqueId();
-        // const photoId = uuid.v4();
         const payloadInQrcode: any = {
           id: photoId,
-          // nistBeaconUniqueId: nistBeacon.current?.pulse.outputValue,
-          // localBeaconUniqueId: localBeacon.current?.uniqueValue,
         };
-        console.log(payloadInQrcode);
-
         let qrCodePath: any = await generateQRCode([payloadInQrcode]);
         qrCodePath = qrCodePath[0];
         const path = await embedQrCodeInPhoto(capturedPhoto, qrCodePath);
+        const savedUri = await saveToCameraRoll(path, 'photo');
         const deviceInfo: any = await fetchDeviceInfo();
 
         const apiBody = {
@@ -592,7 +603,7 @@ export default function VideoCamera({navigation}: any) {
           user: userRef.current,
           photoHash,
           publicData: {
-            path,
+            path: savedUri,
             email: userRef.current.email,
             name: userRef.current.name,
             createdAt: new Date().toISOString(),
@@ -609,7 +620,6 @@ export default function VideoCamera({navigation}: any) {
           },
         };
         await savePhotoHash(apiBody);
-        await saveToCameraRoll(path, 'photo');
       }
     } catch (error) {
       console.log(error);
