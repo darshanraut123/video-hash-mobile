@@ -5,7 +5,7 @@ import MediaItem from './media-item';
 const {width} = Dimensions.get('window');
 const numColumns = 3;
 const itemPadding = 10;
-const extraRightMargin = 0;
+const extraRightMargin = 30;
 const itemWidth =
   (width - itemPadding * (numColumns + 1) - extraRightMargin) / numColumns;
 

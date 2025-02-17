@@ -200,6 +200,8 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
     return dateB - dateA;
   });
 
+  console.log("LOG medias ✅", sortedMedias)
+
   return (
     <>
       <Header
@@ -260,7 +262,7 @@ const VideoLibrary: React.FC<VideoLibraryProps> = ({navigation}) => {
               </TouchableOpacity>
               {selectedMedia.type === 'image' ? (
                 <Image
-                  source={{uri: 'file://' + selectedMedia.uri}}
+                  source={{uri: selectedMedia.uri}}
                   style={styles.fullScreenVideo}
                   resizeMode="contain"
                 />
